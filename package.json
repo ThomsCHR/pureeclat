@@ -2,5 +2,8 @@
   "devDependencies": {
     "@prisma/prisma-schema-wasm": "^7.1.0-5.ab17e348034e9823a063101c707b39f4ba1e6dd4",
     "prettier": "^3.7.3"
+  },
+  "dependencies": {
+    "cors": "^2.8.5"
   }
 }
