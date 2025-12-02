@@ -1,9 +1,13 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // adapte le chemin
+
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();              // ✅ on récupère login du contexte
+
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
 
@@ -33,8 +37,10 @@ export default function LoginPage() {
       }
 
       if (data.token) {
-        localStorage.setItem("authToken", data.token);
+        // 👉 c’est login() qui met à jour le state + localStorage
+        login(data.token);
       }
+
       if (data.user) {
         localStorage.setItem("authUser", JSON.stringify(data.user));
       }
@@ -47,6 +53,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] flex items-center justify-center px-4 py-10">
