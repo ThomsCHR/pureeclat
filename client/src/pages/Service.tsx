@@ -78,9 +78,9 @@ export default function ServicePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950/95 pt-24 text-slate-50">
+      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
         <div className="mx-auto max-w-4xl px-4">
-          <p className="animate-pulse text-sm text-slate-400">
+          <p className="animate-pulse text-sm text-slate-500">
             Chargement du soin…
           </p>
         </div>
@@ -90,16 +90,16 @@ export default function ServicePage() {
 
   if (error || !service) {
     return (
-      <div className="min-h-screen bg-slate-950/95 pt-24 text-slate-50">
+      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
         <div className="mx-auto max-w-4xl px-4 space-y-4">
           <button
             onClick={() => navigate(-1)}
-            className="text-sm text-slate-300 underline underline-offset-4 hover:text-white"
+            className="text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900"
           >
             ← Retour
           </button>
           <h1 className="text-2xl font-semibold">Oups…</h1>
-          <p className="text-slate-300">{error ?? "Soin introuvable."}</p>
+          <p className="text-slate-700">{error ?? "Soin introuvable."}</p>
         </div>
       </div>
     );
@@ -108,33 +108,67 @@ export default function ServicePage() {
   const mainPrice = formatPrice(service.priceCents);
 
   return (
-    <div className="min-h-screen bg-[#f5e9d8] pt-24 text-slate-900">
-      <section className="mx-auto max-w-5xl px-4 pb-16">
+    <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
+      <section className="mx-auto max-w-6xl px-4 pb-16">
         {/* Breadcrumb */}
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        <div className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <button
             onClick={() => navigate("/")}
-            className="hover:text-white transition"
+            className="transition hover:text-slate-900"
           >
             Accueil
           </button>
           <span>›</span>
           {service.category && (
             <>
-              <span className="uppercase tracking-[0.18em] text-slate-400">
+              <span className="uppercase tracking-[0.18em] text-slate-500">
                 {service.category.name}
               </span>
               <span>›</span>
             </>
           )}
-          <span className="text-slate-200">{service.name}</span>
+          <span className="text-slate-700">{service.name}</span>
         </div>
 
-        <div className="grid gap-10 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          {/* Texte principal */}
-          <div className="space-y-6">
-            <p className="text-xs uppercase tracking-[0.25em] text-rose-300/80">
-              soin signature
+        {/* Grille principale : image à gauche, texte à droite */}
+        <div className="grid gap-10 md:grid-cols-2 items-start">
+          {/* Visuel principal */}
+          <div className="space-y-4 order-1 md:order-1">
+            <div className="overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm">
+              {service.imageUrl ? (
+                <img
+                  src={service.imageUrl}
+                  alt={service.name}
+                  className="w-full aspect-[4/3] md:aspect-[5/3] object-cover object-center"
+                />
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center text-xs text-slate-500">
+                  Visuel à venir
+                </div>
+              )}
+            </div>
+
+            {/* Miniatures placeholder (facultatif, tu pourras brancher d’autres images plus tard) */}
+            {service.imageUrl && (
+              <div className="flex gap-3">
+                <button className="h-20 w-20 overflow-hidden rounded-xl border border-slate-300 bg-white">
+                  <img
+                    src={service.imageUrl}
+                    alt={service.name}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+                <div className="h-20 w-20 rounded-xl bg-slate-100" />
+                <div className="h-20 w-20 rounded-xl bg-slate-100" />
+                <div className="h-20 w-20 rounded-xl bg-slate-100" />
+              </div>
+            )}
+          </div>
+
+          {/* Texte principal + infos */}
+          <div className="space-y-6 order-2 md:order-2">
+            <p className="text-xs inline-flex items-center rounded-full bg-black text-white px-4 py-1 tracking-[0.18em] uppercase">
+              Consultation informative
             </p>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight">
@@ -142,80 +176,75 @@ export default function ServicePage() {
             </h1>
 
             {service.shortDescription && (
-              <p className="text-sm md:text-base text-slate-200/90">
+              <p className="text-sm md:text-base text-slate-800">
                 {service.shortDescription}
               </p>
             )}
 
             {service.description && (
-              <p className="text-sm leading-relaxed text-slate-300">
+              <p className="text-sm leading-relaxed text-slate-700">
                 {service.description}
               </p>
             )}
 
-            <div className="flex flex-wrap items-center gap-4 pt-2 text-sm text-slate-200">
-              {service.durationMinutes && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-4 py-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  {service.durationMinutes} min
-                </span>
-              )}
-              {mainPrice && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-4 py-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-                  {mainPrice}
-                </span>
-              )}
+            {/* Prix + durée */}
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap items-baseline gap-2 text-slate-700">
+                <span>À partir de</span>
+                {mainPrice && (
+                  <span className="text-xl font-semibold tracking-wide">
+                    {mainPrice}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {service.durationMinutes && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    {service.durationMinutes} min
+                  </span>
+                )}
+                {mainPrice && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                    {mainPrice}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/40 transition hover:bg-slate-100">
-              <span>Prendre rendez-vous</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs text-white">
+            {/* CTA */}
+            <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900">
+              <span>Prendre RDV</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-black">
                 →
               </span>
             </button>
-          </div>
 
-          {/* Visuel + options */}
-          <div className="space-y-6">
-            {/* Image */}
-            <div className="overflow-hidden rounded-3xl bg-slate-900/60 ring-1 ring-slate-800/80">
-              {service.imageUrl ? (
-                <img
-                  src={service.imageUrl}
-                  alt={service.name}
-                  className="h-64 w-full object-cover object-center"
-                />
-              ) : (
-                <div className="flex h-64 items-center justify-center text-xs text-slate-500">
-                  Visuel à venir
-                </div>
-              )}
-            </div>
-
-            {/* Variantes / options */}
+            {/* Options / versions du soin */}
             {service.options && service.options.length > 0 && (
-              <div className="rounded-2xl bg-slate-900/70 p-4 ring-1 ring-slate-800">
-                <h2 className="text-sm font-semibold text-slate-50">
+              <div className="mt-6 rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Versions du soin
                 </h2>
                 <ul className="mt-3 space-y-2 text-sm">
                   {service.options.map((opt) => (
                     <li
                       key={opt.id}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-slate-900/60 px-3 py-2"
+                      className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2"
                     >
                       <div className="space-y-1">
-                        <p className="font-medium text-slate-100">
+                        <p className="font-medium text-slate-900">
                           {opt.name}
                         </p>
                         {opt.duration && (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             {opt.duration} min
                           </p>
                         )}
                       </div>
-                      <div className="text-sm font-semibold text-slate-50">
+                      <div className="text-sm font-semibold text-slate-900">
                         {formatPrice(opt.priceCents)}
                       </div>
                     </li>
