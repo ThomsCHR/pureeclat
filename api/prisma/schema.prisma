@@ -1,15 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+
+  services    Service[]
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+model Service {
+  id               Int             @id @default(autoincrement())
+  name             String
+  slug             String          @unique
+  shortDescription String?
+  description      String?
+  imageUrl         String?
+  isFeatured       Boolean         @default(false)
+  isActive         Boolean         @default(true)
+  orderInCategory  Int             @default(0)
+
+  // 💰 Prix stocké en centimes (ex : 12000 = 120,00 €)
+  priceCents       Int?
+  durationMinutes  Int?
+
+  categoryId Int
+  category   Category      @relation(fields: [categoryId], references: [id])
+
+  options    ServiceOption[]
+}
+
+model ServiceOption {
+  id        Int     @id @default(autoincrement())
+  name      String
+  duration  Int?
+
+  // 💰 Prix option en centimes
+  priceCents Int
+
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id])
 }

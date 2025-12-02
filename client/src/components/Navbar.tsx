@@ -1,5 +1,4 @@
 const sections = [
-  { id: "needs", label: "Besoins" },
   { id: "solutions", label: "Solutions" },
   { id: "addresses", label: "Adresses" },
   { id: "about", label: "À propos" },
@@ -8,10 +7,16 @@ const sections = [
 ];
 
 export default function Navbar() {
+  const handleServiceClick = (service: string) => {
+    // Pour l'instant on log, plus tard tu pourras router vers une page /soins/...
+    console.log("Service cliqué :", service);
+    // Exemple plus tard :
+    // window.location.href = `/soins/${service}`;
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-30 bg-transparent backdrop-blur-sm">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-1">
-
         {/* Logo */}
         <div className="flex items-center">
           <img
@@ -22,19 +27,155 @@ export default function Navbar() {
         </div>
 
         {/* Links */}
-        <div className="hidden items-center gap-6 text-sm font-medium text-slate-100 md:flex">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                const el = document.getElementById(s.id);
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-              className="transition hover:text-white"
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="hidden items-center gap-6 text-sm font-medium text-slate-100 md:flex relative">
+          {/* Bouton Solutions avec mega menu */}
+          <div className="group relative">
+            <button className="transition hover:text-white">Solutions</button>
+
+            {/* Mega Menu */}
+            <div className="absolute left-1/2 top-full z-40 hidden w-[750px] -translate-x-1/2 rounded-2xl bg-white p-8 text-slate-900 shadow-xl group-hover:block">
+              <div className="grid grid-cols-3 gap-8 text-sm">
+                {/* Colonne visage */}
+                <div>
+                  <h3 className="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                    RITUELS VISAGE
+                  </h3>
+                  <ul className="mt-4 space-y-2">
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("rituel-eclat-signature")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Rituel Éclat Signature
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("hydra-glow")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Hydra Glow
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("peeling-doux-renovateur")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Peeling doux rénovateur
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("massage-sculptant")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Massage sculptant
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Colonne corps */}
+                <div>
+                  <h3 className="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                    SOINS CORPS
+                  </h3>
+                  <ul className="mt-4 space-y-2">
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("modelage-relaxant")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Modelage relaxant
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("enveloppement-raffermissant")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Enveloppement raffermissant
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("drainage-esthetique")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Drainage esthétique
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("soin-jambes-legeres")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Soin jambes légères
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Colonne regard */}
+                <div>
+                  <h3 className="text-xs font-semibold tracking-[0.2em] text-slate-500">
+                    BEAUTÉ DU REGARD
+                  </h3>
+                  <ul className="mt-4 space-y-2">
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("brow-lift")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Brow Lift
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("rehaussement-cils")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Rehaussement de cils
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("teinture-cils-sourcils")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Teinture cils &amp; sourcils
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        onClick={() => handleServiceClick("soin-contour-yeux")}
+                        className="w-full text-left hover:text-rose-500 transition cursor-pointer"
+                      >
+                        Soin contour des yeux
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Les autres liens */}
+          {sections
+            .filter((s) => s.id !== "solutions")
+            .map((s) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  const el = document.getElementById(s.id);
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="transition hover:text-white"
+              >
+                {s.label}
+              </button>
+            ))}
         </div>
 
         {/* CTA buttons */}
@@ -57,7 +198,6 @@ export default function Navbar() {
             <span className="block h-0.5 w-4 bg-white" />
           </div>
         </button>
-
       </nav>
     </header>
   );
