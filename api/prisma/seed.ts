@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-
+import argon2 from "argon2";
 const prisma = new PrismaClient();
 
 async function main() {
@@ -273,6 +273,45 @@ async function main() {
       isActive: true,
     },
   });
+
+  // users
+  const adminEmail = "admin@pureeclat.com";
+  const userEmail = "client@pureeclat.com";
+
+  const adminPasswordHash = await argon2.hash("admin1234");
+  const userPasswordHash = await argon2.hash("user1234");
+
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      firstName: "Admin",
+      lastName: "PureEclat",
+      email: adminEmail,
+      passwordHash: adminPasswordHash,
+      role: "ADMIN",
+      phone: "0600000000",
+      isActive: true,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: userEmail },
+    update: {},
+    create: {
+      firstName: "Emma",
+      lastName: "Client",
+      email: userEmail,
+      passwordHash: userPasswordHash,
+      role: "CLIENT",
+      phone: "0612345678",
+      isActive: true,
+    },
+  });
+
+  console.log("👤 Users créés avec Argon2 : admin & client");
+
+
 
   console.log("✅ Seed terminé.");
 }

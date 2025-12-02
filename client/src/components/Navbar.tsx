@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MiniLoader from "../components/MiniLoader";
+import { useAuth } from "../hooks/useAuth";
 
 const sections = [
   { id: "solutions", label: "Solutions" },
@@ -15,8 +16,8 @@ export default function Navbar() {
   const [loading, setLoading] = useState(false);
   const [openSolutions, setOpenSolutions] = useState(false);
 
-  // TODO: remplace ça par ton vrai état d’auth (contexte, Redux, etc.)
-  const isAuthenticated = false;
+  // ✅ on utilise ton hook d'auth
+  const { isAuthenticated, logout } = useAuth();
 
   const handleLogoClick = () => {
     setLoading(true);
@@ -27,20 +28,20 @@ export default function Navbar() {
   };
 
   const handleServiceClick = (slug: string) => {
-    setOpenSolutions(false); // ← ferme le mega-menu
+    setOpenSolutions(false);
     navigate(`/soins/${slug}`);
   };
 
   const handleAuthClick = () => {
     if (isAuthenticated) {
-      // TODO: log out (clear token, appel API, etc.)
-      console.log("Déconnexion…");
+      // ✅ Déconnexion
+      logout();
+      navigate("/"); // optionnel mais plus propre
     } else {
-      navigate("/connexion"); // ou /login selon ta route
+      // ✅ Connexion
+      navigate("/connexion");
     }
   };
-
-  const authLabel = isAuthenticated ? "Déconnexion" : "Connexion";
 
   return (
     <>
@@ -71,9 +72,9 @@ export default function Navbar() {
               {/* Mega Menu */}
               <div
                 className={`absolute left-1/2 top-full z-40 w-[750px] 
-              -translate-x-1/2 rounded-2xl bg-black p-8 text-white 
-              shadow-xl border border-white/10
-              ${openSolutions ? "block" : "hidden"}`}
+                  -translate-x-1/2 rounded-2xl bg-black p-8 text-white 
+                  shadow-xl border border-white/10
+                  ${openSolutions ? "block" : "hidden"}`}
               >
                 <div className="grid grid-cols-3 gap-8 text-sm">
                   {/* Colonne visage */}
@@ -242,44 +243,29 @@ export default function Navbar() {
           {/* CTA + Connexion */}
           <div className="hidden items-center gap-3 md:flex">
             <button className="rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
-              Offrir une carte cadeau
+              Prendre RDV
             </button>
 
-            <button className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold text-black shadow-lg transition hover:bg-slate-100">
-              <span>Prendre RDV</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] text-white">
-                →
-              </span>
+            {/* Icône de compte */}
+            <button
+              onClick={handleAuthClick}
+              title={isAuthenticated ? "Se déconnecter" : "Se connecter"}
+              className="flex items-center justify-center p-1.5 rounded-full bg-white text-black shadow-md hover:bg-white/90 transition w-7 h-7 active:scale-95"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                viewBox="0 0 20 20"
+                // 🟢 Icône verte si connecté
+                fill={isAuthenticated ? "#22c55e" : "currentColor"}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </button>
-
-            {/* Bouton Connexion / Déconnexion stylé */}
-            <div className="relative group">
-              <div className="relative w-40 h-10 opacity-90 overflow-hidden rounded-xl bg-black z-10">
-                <div
-                  className="absolute z-10 -translate-x-44 group-hover:translate-x-[30rem] 
-                             ease-in transition-all duration-700 h-full w-44 
-                             bg-gradient-to-r from-gray-500 to-white/10 opacity-30 
-                             -skew-x-12"
-                />
-                <div
-                  className="absolute flex items-center justify-center text-white z-[1] 
-                             opacity-90 rounded-xl inset-0.5 bg-black"
-                >
-                  <button
-                    name="auth"
-                    onClick={handleAuthClick}
-                    className="font-semibold text-sm h-full w-full px-4 py-2 rounded-xl bg-black"
-                  >
-                    {authLabel}
-                  </button>
-                </div>
-                <div
-                  className="absolute duration-1000 group-hover:animate-spin 
-                             w-full h-[100px] bg-gradient-to-r from-green-500 
-                             to-yellow-500 blur-[30px]"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Mobile menu */}
