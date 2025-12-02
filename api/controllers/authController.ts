@@ -1,4 +1,3 @@
-// src/controllers/authController.ts
 import type { Request, Response } from "express";
 import { prisma } from "../src/prisma";
 import argon2 from "argon2";

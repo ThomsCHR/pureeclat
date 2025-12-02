@@ -77,7 +77,7 @@ async function main() {
         "Un soin réhydratant en profondeur qui combine sérums concentrés, massages et masque repulpant pour lisser les traits et redonner souplesse à la peau.",
       durationMinutes: 60,
       priceCents: 9500,
-      imageUrl: "/images/soins/hydra-glow.jpg",
+      imageUrl: "/images/soins/hydra-glow-aqua-facial.jpg",
       categoryId: visage.id,
       orderInCategory: 2,
       isActive: true,
@@ -96,7 +96,7 @@ async function main() {
         "Un peeling superficiel adapté aux peaux sensibles pour estomper les irrégularités, lisser le grain de peau et apporter plus de luminosité.",
       durationMinutes: 45,
       priceCents: 8500,
-      imageUrl: "/images/soins/peeling-doux.jpg",
+      imageUrl: "/images/soins/peeling.jpg",
       categoryId: visage.id,
       orderInCategory: 3,
       isActive: true,
@@ -324,6 +324,20 @@ async function main() {
       passwordHash: practitionerPasswordHash,
       role: UserRole.ESTHETICIENNE,
       phone: "0611111111",
+      isActive: true,
+    },
+  });
+
+    await prisma.user.upsert({
+    where: { email: "cassandra@gmail.com" },
+    update: {},
+    create: {
+      firstName: "Cassandra",
+      lastName: "Draijer",
+      email: "cassandra@gmail.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0621111111",
       isActive: true,
     },
   });

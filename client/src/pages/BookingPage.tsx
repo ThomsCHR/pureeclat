@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 
 type AvailabilitySlot = {
   start: string; // ISO
-  end: string;   // ISO
+  end: string; // ISO
 };
 
 type PractitionerAvailability = {
@@ -20,6 +20,18 @@ type ServiceLight = {
   durationMinutes?: number | null;
 };
 
+const getPractitionerSubtitle = (name: string) => {
+  if (name.startsWith("Cassandra")) {
+    return "Directrice & fondatrice Pure Éclat";
+  }
+  if (name.startsWith("Camille")) {
+    return "Responsable"; }
+
+  return "Esthéticienne Pure Éclat";
+};
+
+
+
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -31,9 +43,9 @@ export default function BookingPage() {
     return today.toISOString().slice(0, 10); // YYYY-MM-DD
   });
   const [loading, setLoading] = useState(true);
-  const [availability, setAvailability] = useState<
-    PractitionerAvailability[]
-  >([]);
+  const [availability, setAvailability] = useState<PractitionerAvailability[]>(
+    []
+  );
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -211,8 +223,8 @@ export default function BookingPage() {
           <>
             {availability.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#e4d4c5] bg-[#fff8f2] px-4 py-5 text-sm text-slate-600">
-                Aucun créneau disponible pour cette date.  
-                Essayez une autre journée ou contactez-nous directement.
+                Aucun créneau disponible pour cette date. Essayez une autre
+                journée ou contactez-nous directement.
               </div>
             ) : (
               <div className="space-y-6">
@@ -227,7 +239,7 @@ export default function BookingPage() {
                           {pract.practitionerName}
                         </p>
                         <p className="text-xs text-slate-500">
-                          Esthéticienne Pure Éclat
+                          {getPractitionerSubtitle(pract.practitionerName)}
                         </p>
                       </div>
                       {service?.durationMinutes && (

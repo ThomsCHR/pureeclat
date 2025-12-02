@@ -62,7 +62,7 @@ model Service {
 
   options ServiceOption[]
 
-  /// 👇 un service peut être réservé dans plusieurs rendez-vous
+  ///  un service peut être réservé dans plusieurs rendez-vous
   appointments Appointment[]
 }
 
@@ -75,7 +75,7 @@ model ServiceOption {
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
 
-  /// 👇 une option peut être utilisée dans plusieurs rendez-vous
+  ///  une option peut être utilisée dans plusieurs rendez-vous
   appointments Appointment[]
 }
 

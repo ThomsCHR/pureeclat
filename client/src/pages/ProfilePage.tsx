@@ -36,9 +36,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
 
-  const [clientAppointments, setClientAppointments] = useState<
-    ClientAppointment[]
-  >([]);
+  const [clientAppointments, setClientAppointments] = useState<ClientAppointment[]>([]);
   const [practitionerAppointments, setPractitionerAppointments] = useState<
     PractitionerAppointment[]
   >([]);
@@ -50,9 +48,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
   // vue du profil : en tant que cliente ou praticienne
-  const [profileMode, setProfileMode] = useState<"client" | "practitioner">(
-    "client"
-  );
+  const [profileMode, setProfileMode] = useState<"client" | "practitioner">("client");
 
   // Récupérer user + RDV client
   useEffect(() => {
@@ -81,30 +77,23 @@ export default function ProfilePage() {
         setLoadingClient(true);
         setError(null);
 
-        const res = await fetch(
-          "http://localhost:3000/api/appointments/me",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch("http://localhost:3000/api/appointments/me", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(
-            data?.message ?? "Impossible de charger vos rendez-vous."
-          );
+          throw new Error(data?.message ?? "Impossible de charger vos rendez-vous.");
         }
 
         setClientAppointments(data.appointments ?? []);
       } catch (err) {
         console.error(err);
-        setError(
-          "Impossible de charger vos rendez-vous pour le moment."
-        );
+        setError("Impossible de charger vos rendez-vous pour le moment.");
       } finally {
         setLoadingClient(false);
       }
@@ -122,22 +111,18 @@ export default function ProfilePage() {
       try {
         setLoadingPract(true);
 
-        const res = await fetch(
-          "http://localhost:3000/api/appointments/practitioner/me",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch("http://localhost:3000/api/appointments/practitioner/me", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await res.json();
 
         if (!res.ok) {
           throw new Error(
-            data?.message ??
-              "Impossible de charger les rendez-vous de vos clientes."
+            data?.message ?? "Impossible de charger les rendez-vous de vos clientes."
           );
         }
 
@@ -156,6 +141,49 @@ export default function ProfilePage() {
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
     navigate("/");
+  };
+
+  // 👉 annulation d'un rendez-vous côté client
+  const handleCancelAppointment = async (id: number) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/connexion");
+      return;
+    }
+
+    const confirmCancel = window.confirm(
+      "Voulez-vous vraiment annuler ce rendez-vous ?"
+    );
+    if (!confirmCancel) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/appointments/${id}/cancel`,
+        {
+          method: "POST", // adapte si ton backend utilise POST / PUT
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message ?? "Annulation impossible.");
+      }
+
+      // Mise à jour locale : status -> "cancelled"
+      setClientAppointments((prev) =>
+        prev.map((rdv) =>
+          rdv.id === id ? { ...rdv, status: "cancelled" } : rdv
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Impossible d'annuler ce rendez-vous pour le moment.");
+    }
   };
 
   const formatDate = (iso: string) =>
@@ -258,7 +286,7 @@ export default function ProfilePage() {
             <p className="text-sm text-slate-600">
               {role === "ESTHETICIENNE" && profileMode === "practitioner"
                 ? "Planning des prochains soins prévus avec vos clientes."
-                : "Retrouvez ici l&apos;ensemble de vos soins à venir et passés."}
+                : "Retrouvez ici l'ensemble de vos soins à venir et passés."}
             </p>
           </div>
 
@@ -320,7 +348,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Liste principal selon le mode */}
+          {/* Liste principale selon le mode */}
           <div className="flex-1 overflow-y-auto space-y-3">
             {profileMode === "client" ? (
               // ---- Vue cliente ----
@@ -387,6 +415,16 @@ export default function ProfilePage() {
                             ? "Annulé"
                             : "Terminé"}
                         </span>
+
+                        {rdv.status === "upcoming" && (
+                          <button
+                            type="button"
+                            onClick={() => handleCancelAppointment(rdv.id)}
+                            className="mt-2 inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[0.7rem] font-medium text-rose-700 hover:bg-rose-100 transition"
+                          >
+                            Annuler ce rendez-vous
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

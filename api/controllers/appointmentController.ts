@@ -12,7 +12,7 @@ import type { AuthRequest } from "../middleware/authMiddleware";
 
 const prisma = new PrismaClient();
 
-// 👇 Type d'un rendez-vous avec ses relations incluses
+// Type d'un rendez-vous avec ses relations incluses
 type AppointmentWithRelations = Appointment & {
   service: Service;
   serviceOption: ServiceOption | null;
