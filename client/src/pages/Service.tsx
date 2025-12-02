@@ -215,7 +215,10 @@ export default function ServicePage() {
             </div>
 
             {/* CTA */}
-            <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900">
+            <button
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900"
+              onClick={() => navigate(`/reservation/${service.slug}`)} // 👈 redirection
+            >
               <span>Prendre RDV</span>
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-black">
                 →
@@ -235,9 +238,7 @@ export default function ServicePage() {
                       className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2"
                     >
                       <div className="space-y-1">
-                        <p className="font-medium text-slate-900">
-                          {opt.name}
-                        </p>
+                        <p className="font-medium text-slate-900">{opt.name}</p>
                         {opt.duration && (
                           <p className="text-xs text-slate-500">
                             {opt.duration} min

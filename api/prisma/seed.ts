@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, UserRole } from "@prisma/client";
 import argon2 from "argon2";
 const prisma = new PrismaClient();
 
@@ -310,6 +310,40 @@ async function main() {
   });
 
   console.log("👤 Users créés avec Argon2 : admin & client");
+
+    // --- ESTHETIENNES ---
+  const practitionerPasswordHash = await argon2.hash("esth1234");
+
+  await prisma.user.upsert({
+    where: { email: "camille@pureeclat.com" },
+    update: {},
+    create: {
+      firstName: "Camille",
+      lastName: "Dupont",
+      email: "camille@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0611111111",
+      isActive: true,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "lea@pureeclat.com" },
+    update: {},
+    create: {
+      firstName: "Léa",
+      lastName: "Martin",
+      email: "lea@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0622222222",
+      isActive: true,
+    },
+  });
+
+  console.log("👤 Users créés avec Argon2 : admin, client & esthéticiennes");
+
 
 
 

@@ -5,6 +5,8 @@ import About from "./pages/About";
 import ServicePage from "./pages/Service";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage"
+import ProfilePage from "./pages/ProfilePage";
+import BookingPage from "./pages/BookingPage";
 
 
 
@@ -19,6 +21,8 @@ function App() {
         <Route path="/soins/:slug" element={<ServicePage />} />
         <Route path="/connexion" element={<LoginPage />} />
         <Route path="/inscription" element={<RegisterPage />} />
+        <Route path="/profil" element={<ProfilePage />} />
+        <Route path="/reservation/:slug" element={<BookingPage />} />
       </Routes>
     </BrowserRouter>
   );

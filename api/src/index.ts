@@ -4,6 +4,8 @@ import cors from "cors";
 import serviceRoutes from "../routers/serviceRoutes";
 import authRoutes from "../routers/authRoutes";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
+import appointmentRoutes from "../routers/appointmentRoutes";
+import availabilityRoutes from "../routers/availabilityRoutes";
 
 
 
@@ -16,6 +18,8 @@ app.use(express.json());
 
 app.use("/api/services", serviceRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 app.get("/api/me", authMiddleware, (req, res) => {
   // @ts-ignore (ou mieux : typage avec AuthRequest)
@@ -24,6 +28,8 @@ app.get("/api/me", authMiddleware, (req, res) => {
 app.get("/api/admin/secret", authMiddleware, requireAdmin, (_req, res) => {
   res.json({ message: "Zone admin - accès autorisé" });
 });
+
+
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });

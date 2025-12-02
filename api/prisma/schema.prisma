@@ -10,62 +10,100 @@ datasource db {
 enum UserRole {
   CLIENT
   ADMIN
+  ESTHETICIENNE
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   firstName    String
   lastName     String
-  email        String    @unique
-  phone        String?   @unique
-  passwordHash String    // mot de passe hashé 
-  role         UserRole  @default(CLIENT)
-  isActive     Boolean   @default(true)
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  role         UserRole @default(CLIENT)
+  isActive     Boolean  @default(true)
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RDV où l'utilisateur est client
+  clientAppointments       Appointment[] @relation("ClientAppointments")
+  // RDV où l'utilisateur est praticienne
+  practitionerAppointments Appointment[] @relation("PractitionerAppointments")
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
-  slug        String    @unique
+  slug        String  @unique
   description String?
-  order       Int       @default(0)
-  isActive    Boolean   @default(true)
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
 
-  services    Service[]
+  services Service[]
 }
 
 model Service {
-  id               Int             @id @default(autoincrement())
+  id               Int     @id @default(autoincrement())
   name             String
-  slug             String          @unique
+  slug             String  @unique
   shortDescription String?
   description      String?
   imageUrl         String?
-  isFeatured       Boolean         @default(false)
-  isActive         Boolean         @default(true)
-  orderInCategory  Int             @default(0)
+  isFeatured       Boolean @default(false)
+  isActive         Boolean @default(true)
+  orderInCategory  Int     @default(0)
 
-  // 💰 Prix stocké en centimes (ex : 12000 = 120,00 €)
-  priceCents       Int?
-  durationMinutes  Int?
+  priceCents      Int?
+  durationMinutes Int?
 
   categoryId Int
-  category   Category      @relation(fields: [categoryId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  options    ServiceOption[]
+  options ServiceOption[]
+
+  /// 👇 un service peut être réservé dans plusieurs rendez-vous
+  appointments Appointment[]
 }
 
 model ServiceOption {
-  id        Int     @id @default(autoincrement())
-  name      String
-  duration  Int?
-
-  // 💰 Prix option en centimes
+  id         Int    @id @default(autoincrement())
+  name       String
+  duration   Int?
   priceCents Int
 
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
+
+  /// 👇 une option peut être utilisée dans plusieurs rendez-vous
+  appointments Appointment[]
+}
+
+enum AppointmentStatus {
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+model Appointment {
+  id      Int      @id @default(autoincrement())
+  startAt DateTime
+
+  // Client
+  userId Int
+  user   User @relation("ClientAppointments", fields: [userId], references: [id])
+
+  // Praticienne
+  practitionerId Int
+  practitioner   User @relation("PractitionerAppointments", fields: [practitionerId], references: [id])
+
+  serviceId       Int
+  service         Service        @relation(fields: [serviceId], references: [id])
+
+  serviceOptionId Int?
+  serviceOption   ServiceOption? @relation(fields: [serviceOptionId], references: [id])
+
+  status    AppointmentStatus @default(BOOKED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 }

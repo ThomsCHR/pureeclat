@@ -1,5 +1,8 @@
 import HeroTitle from "../components/HeroTitle";
 import ButtonExplore from "../components/ButtonExplore";
+import AnimatedCard from "../components/AnimatedCard";
+import AnimatedHeroImage from "../components/AnimatedHeroImage";
+
 
 
 export default function Home() {
@@ -10,21 +13,12 @@ export default function Home() {
         id="hero"
         className="relative overflow-hidden"
       >
+        
         {/* Image plein écran */}
         <div className="pointer-events-none absolute inset-y-0 right-[0] w-[100%] hidden md:block">
-          <img
-              src="/images/acc1-1920.jpg"
-              srcSet="
-                /images/acc1.jpg 1920w,
-                /images/acc1-2560.jpg 2560w,
-                /images/acc1-3840.jpg 3840w
-                                      "
-                sizes="100vw"
-                alt="Visuel esthétique"
-                className="h-full w-full object-cover object-center"
-              />
-
+           <AnimatedHeroImage />
         </div>
+        
 
         {/* Version mobile : image en fond léger */}
         <div className="pointer-events-none absolute inset-0 md:hidden opacity-40">
@@ -76,45 +70,44 @@ export default function Home() {
 
       {/* SECTION BESOINS */}
       <section
-        id="needs"
-        className="bg-white/80 py-20 text-slate-900 backdrop-blur"
-      >
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-semibold md:text-4xl">
-            Répondez à vos besoins, en toute confiance
-          </h2>
-          <p className="mt-4 max-w-2xl text-sm md:text-base text-slate-600">
-            Qu’il s’agisse de prévenir les signes de l’âge, d’harmoniser votre
-            visage ou de prendre soin de votre peau, nos protocoles sont
-            personnalisés pour respecter votre naturel.
-          </p>
+  id="needs"
+  className="bg-white/80 py-20 text-slate-900 backdrop-blur"
+>
+  <div className="mx-auto max-w-6xl px-4">
+    <h2 className="text-3xl font-semibold md:text-4xl">
+      Répondez à vos besoins, en toute confiance
+    </h2>
+    <p className="mt-4 max-w-2xl text-sm md:text-base text-slate-600">
+      Qu’il s’agisse de prévenir les signes de l’âge, d’harmoniser votre
+      visage ou de prendre soin de votre peau, nos protocoles sont
+      personnalisés pour respecter votre naturel.
+    </p>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: "Rides & relâchement",
-                text: "Solutions sur-mesure pour lisser, repulper et redessiner les volumes du visage.",
-              },
-              {
-                title: "Qualité de peau",
-                text: "Peelings, skinboosters, lasers… Une peau plus uniforme, lumineuse et éclatante.",
-              },
-              {
-                title: "Harmonisation du visage",
-                text: "Approche globale pour respecter vos traits et révéler votre singularité.",
-              },
-            ].map((card) => (
-              <div
-                key={card.title}
-                className="rounded-2xl bg-slate-50 p-5 shadow-sm shadow-slate-200"
-              >
-                <h3 className="text-lg font-semibold">{card.title}</h3>
-                <p className="mt-2 text-sm text-slate-600">{card.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+    <div className="mt-10 grid gap-6 md:grid-cols-3">
+      {[
+        {
+          title: "Rides & relâchement",
+          text: "Solutions sur-mesure pour lisser, repulper et redessiner les volumes du visage.",
+        },
+        {
+          title: "Qualité de peau",
+          text: "Peelings, skinboosters, lasers… Une peau plus uniforme, lumineuse et éclatante.",
+        },
+        {
+          title: "Harmonisation du visage",
+          text: "Approche globale pour respecter vos traits et révéler votre singularité.",
+        },
+      ].map((card, i) => (
+        <AnimatedCard
+          key={card.title}
+          title={card.title}
+          text={card.text}
+          delay={i * 0.15}
+        />
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* SECTION SOLUTIONS */}
       <section

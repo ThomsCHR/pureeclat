@@ -17,7 +17,7 @@ export default function Navbar() {
   const [openSolutions, setOpenSolutions] = useState(false);
 
   // ✅ on utilise ton hook d'auth
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, } = useAuth();
 
   const handleLogoClick = () => {
     setLoading(true);
@@ -32,16 +32,16 @@ export default function Navbar() {
     navigate(`/soins/${slug}`);
   };
 
-  const handleAuthClick = () => {
-    if (isAuthenticated) {
-      // ✅ Déconnexion
-      logout();
-      navigate("/"); // optionnel mais plus propre
-    } else {
-      // ✅ Connexion
-      navigate("/connexion");
-    }
-  };
+const handleAuthClick = () => {
+  if (isAuthenticated) {
+    // 🔹 Quand connecté → aller vers le profil
+    navigate("/profil");
+  } else {
+    // 🔹 Quand pas connecté → aller vers la page de connexion
+    navigate("/connexion");
+  }
+};
+
 
   return (
     <>
@@ -249,7 +249,7 @@ export default function Navbar() {
             {/* Icône de compte */}
             <button
               onClick={handleAuthClick}
-              title={isAuthenticated ? "Se déconnecter" : "Se connecter"}
+              title={isAuthenticated ? "Mon profil" : "Se connecter"}
               className="flex items-center justify-center p-1.5 rounded-full bg-white text-black shadow-md hover:bg-white/90 transition w-7 h-7 active:scale-95"
             >
               <svg
