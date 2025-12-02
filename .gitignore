@@ -1,0 +1,44 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Prisma
+prisma/*.db
+prisma/migrations/
+
+# Logs
+logs/
+*.log
+log.txt
+
+# Editor configs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vite (front-end)
+client/node_modules/
+client/dist/
+client/.vite/
+
+# API build
+api/node_modules/
+api/dist/
