@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiCreateAppointment, apiGetAvailability, apiGetServiceBySlug} from "../api/apiClient";
+import {
+  apiCreateAppointment,
+  apiGetAvailability,
+  apiGetServiceBySlug,
+} from "../api/apiClient";
 import type { PractitionerAvailabilityApi } from "../api/apiClient";
-
 
 type AvailabilitySlot = PractitionerAvailabilityApi["slots"][number];
 
@@ -21,12 +24,11 @@ const getPractitionerSubtitle = (name: string) => {
     return "Directrice & fondatrice Pure Éclat";
   }
   if (name.startsWith("Camille")) {
-    return "Responsable"; }
+    return "Responsable";
+  }
 
   return "Esthéticienne Pure Éclat";
 };
-
-
 
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -53,54 +55,54 @@ export default function BookingPage() {
   }, [isAuthenticated, navigate]);
 
   // Charger le service (id + nom) à partir du slug
-useEffect(() => {
-  if (!slug) return;
+  useEffect(() => {
+    if (!slug) return;
 
-  const fetchService = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const fetchService = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await apiGetServiceBySlug(slug);
+        const data = await apiGetServiceBySlug(slug);
 
-      setService({
-        id: data.id,
-        name: data.name,
-        slug: data.slug,
-        durationMinutes: data.durationMinutes,
-      });
-    } catch (err) {
-      console.error(err);
-      setError("Impossible de charger ce soin.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setService({
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          durationMinutes: data.durationMinutes ?? null, // 👈 ici
+        });
+      } catch (err) {
+        console.error(err);
+        setError("Impossible de charger ce soin.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchService();
-}, [slug]);
+    fetchService();
+  }, [slug]);
 
   // Charger les créneaux disponibles pour une date donnée
-useEffect(() => {
-  if (!service) return;
+  useEffect(() => {
+    if (!service) return;
 
-  const fetchAvailability = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const fetchAvailability = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await apiGetAvailability(service.id, date);
-      setAvailability(data.practitioners ?? []);
-    } catch (err) {
-      console.error(err);
-      setError("Impossible de charger les disponibilités pour cette date.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        const data = await apiGetAvailability(service.id, date);
+        setAvailability(data.practitioners ?? []);
+      } catch (err) {
+        console.error(err);
+        setError("Impossible de charger les disponibilités pour cette date.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchAvailability();
-}, [service, date]);
+    fetchAvailability();
+  }, [service, date]);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", {
@@ -109,32 +111,32 @@ useEffect(() => {
     });
 
   const handleCreateAppointment = async (
-  practitionerId: number,
-  slot: AvailabilitySlot
-) => {
-  if (!service) return;
+    practitionerId: number,
+    slot: AvailabilitySlot
+  ) => {
+    if (!service) return;
 
-  try {
-    setCreating(true);
+    try {
+      setCreating(true);
 
-    await apiCreateAppointment({
-      serviceId: service.id,
-      practitionerId,
-      startAt: slot.start,
-    });
+      await apiCreateAppointment({
+        serviceId: service.id,
+        practitionerId,
+        startAt: slot.start,
+      });
 
-    navigate("/profil");
-  } catch (err) {
-    console.error(err);
-    alert(
-      err instanceof Error
-        ? err.message
-        : "Impossible de réserver ce créneau pour le moment."
-    );
-  } finally {
-    setCreating(false);
-  }
-};
+      navigate("/profil");
+    } catch (err) {
+      console.error(err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Impossible de réserver ce créneau pour le moment."
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
