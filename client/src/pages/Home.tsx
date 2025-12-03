@@ -383,41 +383,49 @@ export default function Home() {
 
       {/* SECTION GUIDES & TARIFS */}
       <section id="guides" className="bg-white py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-2xl font-semibold md:text-3xl">
-            Mieux comprendre les soins esthétiques
-          </h2>
-          <p className="mt-2 max-w-xl text-sm md:text-base text-slate-600">
-            Des guides et conseils pour vous aider à choisir vos rituels,
-            préparer vos rendez-vous et prolonger les effets des soins à la
-            maison.
-          </p>
+  <div className="mx-auto max-w-6xl px-4">
+    <h2 className="text-2xl font-semibold md:text-3xl">
+      Mieux comprendre les soins esthétiques
+    </h2>
+    <p className="mt-2 max-w-xl text-sm md:text-base text-slate-600">
+      Des guides et conseils pour vous aider à choisir vos rituels,
+      préparer vos rendez-vous et prolonger les effets des soins à la
+      maison.
+    </p>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {[
-              "Choisir son rituel visage",
-              "Préparer sa première visite",
-              "Prolonger l’éclat après un soin",
-            ].map((title) => (
-              <article
-                key={title}
-                className="space-y-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-700 shadow-sm shadow-slate-100"
-              >
-                <h3 className="text-base font-semibold text-slate-900">
-                  {title}
-                </h3>
-                <p>
-                  Texte fictif, que tu pourras remplacer par de vrais contenus
-                  pédagogiques autour de tes soins et routines beauté.
-                </p>
-                <button className="text-xs font-semibold text-slate-900 underline underline-offset-4">
-                  Lire l&apos;article
-                </button>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+    <div className="mt-8 grid gap-6 md:grid-cols-3">
+
+      {[
+        {
+          title: "Choisir son rituel visage",
+          text: "Découvrez comment identifier votre type de peau et sélectionner les soins les mieux adaptés pour optimiser l’éclat, l’hydratation et l’équilibre de votre peau au quotidien."
+        },
+        {
+          title: "Préparer sa première visite",
+          text: "Apprenez comment se déroule une séance en institut, quelles questions vous seront posées et comment vous préparer pour profiter pleinement de votre soin."
+        },
+        {
+          title: "Prolonger l’éclat après un soin",
+          text: "Adoptez les bons gestes pour maintenir les bienfaits de votre soin : hydratation, protection, routine douce et habitudes à éviter dans les jours qui suivent."
+        }
+      ].map(({ title, text }) => (
+        <article
+          key={title}
+          className="space-y-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-700 shadow-sm shadow-slate-100"
+        >
+          <h3 className="text-base font-semibold text-slate-900">
+            {title}
+          </h3>
+          <p>{text}</p>
+          <button className="text-xs font-semibold text-slate-900 underline underline-offset-4">
+            Lire l&apos;article
+          </button>
+        </article>
+      ))}
+
+    </div>
+  </div>
+</section>
 
       {/* SECTION TARIFS (vers page dédiée) */}
       <section id="pricing" className="bg-amber-50 py-14">
