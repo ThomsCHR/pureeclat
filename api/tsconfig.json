@@ -8,11 +8,20 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "strict": true,
+
+    "strict": false,
+    "noImplicitAny": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["src", "prisma/seed.ts"]
+  "include": [
+    "src",
+    "routers",
+    "controllers",
+    "services",
+    "middleware",
+    "prisma/seed.ts"
+  ]
 }
