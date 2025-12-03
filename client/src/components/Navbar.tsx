@@ -250,10 +250,13 @@ export default function Navbar() {
 
           {/* CTA + Connexion */}
           <div className="hidden items-center gap-3 md:flex">
-            <button className="rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
-              Prendre RDV
-            </button>
-
+            
+            <button
+            onClick={() => navigate("/soins")}
+            className="rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+          >
+            Prendre RDV
+          </button>
             {/* Icône de compte */}
             <button
               onClick={handleAuthClick}
