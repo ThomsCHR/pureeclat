@@ -94,10 +94,20 @@ export default function AdminUserAppointmentsPage() {
       minute: "2-digit",
     });
 
-  const formatStatus = (status: AppointmentStatus) => {
+  const isPastAppointment = (iso: string) => {
+    return new Date(iso) < new Date();
+  };
+
+  const formatStatus = (status: AppointmentStatus, startAt: string) => {
+    if (status === "BOOKED") {
+      // Si le rendez-vous est passé mais toujours "BOOKED" en BDD
+      if (isPastAppointment(startAt)) {
+        return "Passé";
+      }
+      return "À venir";
+    }
+
     switch (status) {
-      case "BOOKED":
-        return "À venir";
       case "COMPLETED":
         return "Terminé";
       case "CANCELLED":
@@ -121,7 +131,9 @@ export default function AdminUserAppointmentsPage() {
           >
             ← Retour
           </button>
-          <p className="text-sm text-rose-700">{error ?? "Utilisateur introuvable."}</p>
+          <p className="text-sm text-rose-700">
+            {error ?? "Utilisateur introuvable."}
+          </p>
         </div>
       </div>
     );
@@ -176,10 +188,10 @@ export default function AdminUserAppointmentsPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-medium bg-slate-50 border border-slate-200 text-slate-700">
-                      {formatStatus(rdv.status)}
+                      {formatStatus(rdv.status, rdv.startAt)}
                     </span>
 
-                    {rdv.status === "BOOKED" && (
+                    {rdv.status === "BOOKED" && !isPastAppointment(rdv.startAt) && (
                       <button
                         onClick={() => handleAdminCancel(rdv.id)}
                         className="rounded-full bg-rose-100 border border-rose-300 px-3 py-1 text-[0.7rem] text-rose-700 font-medium hover:bg-rose-200 transition"
@@ -220,10 +232,10 @@ export default function AdminUserAppointmentsPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-medium bg-slate-50 border border-slate-200 text-slate-700">
-                      {formatStatus(rdv.status)}
+                      {formatStatus(rdv.status, rdv.startAt)}
                     </span>
 
-                    {rdv.status === "BOOKED" && (
+                    {rdv.status === "BOOKED" && !isPastAppointment(rdv.startAt) && (
                       <button
                         onClick={() => handleAdminCancel(rdv.id)}
                         className="rounded-full bg-rose-100 border border-rose-300 px-3 py-1 text-[0.7rem] text-rose-700 font-medium hover:bg-rose-200 transition"
