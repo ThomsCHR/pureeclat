@@ -1,64 +1,44 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-type ServiceOption = {
-  id: number;
-  name: string;
-  duration: number | null;
-  priceCents: number;
-};
-
-type Category = {
-  id: number;
-  name: string;
-  slug: string;
-};
-
-type Service = {
-  id: number;
-  name: string;
-  slug: string;
-  shortDescription?: string | null;
-  description?: string | null;
-  imageUrl?: string | null;
-  durationMinutes?: number | null;
-  priceCents?: number | null;
-  category?: Category;
-  options?: ServiceOption[];
-};
+import { apiGetServiceBySlug, type ServiceApi } from "../api/apiClient";
 
 export default function ServicePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const [service, setService] = useState<Service | null>(null);
+  const [service, setService] = useState<ServiceApi | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug) {
+      setError("Soin introuvable.");
+      setLoading(false);
+      return;
+    }
 
     const fetchService = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`http://localhost:3000/api/services/${slug}`);
-        if (!res.ok) {
-          if (res.status === 404) {
-            setError("Ce soin n’a pas été trouvé.");
-          } else {
-            setError("Une erreur est survenue, veuillez réessayer.");
-          }
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
+        const data = await apiGetServiceBySlug(slug);
         setService(data);
       } catch (err) {
         console.error(err);
-        setError("Impossible de charger ce soin pour le moment.");
+
+        if (err instanceof Error) {
+          // On essaie de garder un comportement proche de ton code initial
+          if (err.message.includes("404")) {
+            setError("Ce soin n’a pas été trouvé.");
+          } else {
+            setError(
+              err.message || "Une erreur est survenue, veuillez réessayer."
+            );
+          }
+        } else {
+          setError("Impossible de charger ce soin pour le moment.");
+        }
       } finally {
         setLoading(false);
       }
@@ -130,7 +110,7 @@ export default function ServicePage() {
           <span className="text-slate-700">{service.name}</span>
         </div>
 
-        {/* Grille principale : image à gauche, texte à droite */}
+        {/* Grille principale */}
         <div className="grid gap-10 md:grid-cols-2 items-start">
           {/* Visuel principal */}
           <div className="space-y-4 order-1 md:order-1">
@@ -148,7 +128,6 @@ export default function ServicePage() {
               )}
             </div>
 
-            {/* Miniatures placeholder (facultatif, tu pourras brancher d’autres images plus tard) */}
             {service.imageUrl && (
               <div className="flex gap-3">
                 <button className="h-20 w-20 overflow-hidden rounded-xl border border-slate-300 bg-white">
@@ -165,7 +144,7 @@ export default function ServicePage() {
             )}
           </div>
 
-          {/* Texte principal + infos */}
+          {/* Texte + infos */}
           <div className="space-y-6 order-2 md:order-2">
             <p className="text-xs inline-flex items-center rounded-full bg-black text-white px-4 py-1 tracking-[0.18em] uppercase">
               Consultation informative
@@ -217,7 +196,7 @@ export default function ServicePage() {
             {/* CTA */}
             <button
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900"
-              onClick={() => navigate(`/reservation/${service.slug}`)} // 👈 redirection
+              onClick={() => navigate(`/reservation/${service.slug}`)}
             >
               <span>Prendre RDV</span>
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-black">
@@ -225,7 +204,7 @@ export default function ServicePage() {
               </span>
             </button>
 
-            {/* Options / versions du soin */}
+            {/* Options */}
             {service.options && service.options.length > 0 && (
               <div className="mt-6 rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">

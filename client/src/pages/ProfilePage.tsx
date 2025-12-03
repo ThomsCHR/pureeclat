@@ -98,7 +98,7 @@ export default function ProfilePage() {
   }, [isAuthenticated, role]);
 
   const handleLogout = () => {
-    logout();          // ← on passe par le contexte
+    logout(); // ← on passe par le contexte
     navigate("/");
   };
 
@@ -195,8 +195,8 @@ export default function ProfilePage() {
                       ? "Administratrice & Esthéticienne"
                       : "Administratrice"
                     : role === "ESTHETICIENNE"
-                    ? "Esthéticienne"
-                    : "Client(e)"}
+                      ? "Esthéticienne"
+                      : "Client(e)"}
                 </p>
               )}
             </div>
@@ -211,6 +211,14 @@ export default function ProfilePage() {
             <p className="text-[0.65rem] text-white/50">
               *Selon nos conditions d&apos;annulation.
             </p>
+            {user?.isAdmin && (
+              <button
+                onClick={() => navigate("/admin/users")}
+                className="inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white hover:bg-white/20 transition"
+              >
+                Gérer les utilisateurs
+              </button>
+            )}
 
             <button
               onClick={handleLogout}
@@ -353,15 +361,15 @@ export default function ProfilePage() {
                             rdv.status === "upcoming"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                               : rdv.status === "cancelled"
-                              ? "bg-rose-50 text-rose-700 border border-rose-100"
-                              : "bg-slate-50 text-slate-600 border border-slate-100"
+                                ? "bg-rose-50 text-rose-700 border border-rose-100"
+                                : "bg-slate-50 text-slate-600 border border-slate-100"
                           }`}
                         >
                           {rdv.status === "upcoming"
                             ? "À venir"
                             : rdv.status === "cancelled"
-                            ? "Annulé"
-                            : "Terminé"}
+                              ? "Annulé"
+                              : "Terminé"}
                         </span>
 
                         {rdv.status === "upcoming" && (
@@ -414,15 +422,15 @@ export default function ProfilePage() {
                               rdv.status === "upcoming"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                 : rdv.status === "cancelled"
-                                ? "bg-rose-50 text-rose-700 border border-rose-100"
-                                : "bg-slate-50 text-slate-600 border border-slate-100"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-100"
+                                  : "bg-slate-50 text-slate-600 border border-slate-100"
                             }`}
                           >
                             {rdv.status === "upcoming"
                               ? "À venir"
                               : rdv.status === "cancelled"
-                              ? "Annulé"
-                              : "Terminé"}
+                                ? "Annulé"
+                                : "Terminé"}
                           </span>
                         </div>
                       </div>

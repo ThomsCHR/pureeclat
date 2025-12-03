@@ -1,14 +1,19 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
+// mêmes valeurs que ton enum Prisma UserRole
+export type UserRole = "CLIENT" | "ADMIN" | "ESTHETICIENNE";
+
+export interface AuthUser {
+  id: number;
+  role: UserRole;
+  isAdmin: boolean;
+}
+
 export interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    role: string;
-  };
+  user?: AuthUser;
 }
 
 export function authMiddleware(
@@ -29,12 +34,14 @@ export function authMiddleware(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
-      role: string;
+      role: UserRole;
+      isAdmin?: boolean;
     };
 
     req.user = {
       id: decoded.userId,
       role: decoded.role,
+      isAdmin: !!decoded.isAdmin, // on force en booléen
     };
 
     return next();
@@ -46,14 +53,15 @@ export function authMiddleware(
   }
 }
 
-// Option : middleware pour restreindre à un rôle
 export function requireAdmin(
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) {
-  if (!req.user || req.user.role !== "ADMIN") {
-    return res.status(403).json({ message: "Accès réservé à l'administrateur." });
+  if (!req.user || !(req.user.isAdmin || req.user.role === "ADMIN")) {
+    return res
+      .status(403)
+      .json({ message: "Accès réservé à l'administrateur." });
   }
 
   return next();

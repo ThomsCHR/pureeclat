@@ -18,6 +18,7 @@ export type AuthUser = {
 type AuthContextType = {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  isAdmin?: boolean;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
 };
@@ -54,8 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   };
 
+  const isAdmin = !!user?.isAdmin;
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated,isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

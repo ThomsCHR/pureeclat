@@ -1,24 +1,18 @@
 import { useEffect, useState } from "react";
-
-type Service = {
-  id: number;
-  name: string;
-  slug: string;
-  priceCents: number | null;
-  durationMinutes: number | null;
-  category: {
-    name: string;
-    slug: string;
-  };
-};
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  apiGetPricingServices,
+  apiDeleteService,
+  type PricingServiceApi,
+} from "../api/apiClient";
 
 type GroupedServices = {
-  [categoryName: string]: Service[];
+  [categoryName: string]: PricingServiceApi[];
 };
 
 const formatPrice = (priceCents: number | null | undefined) => {
   if (priceCents == null) return "Sur devis";
-  // ex: 12000 -> "120 €"
   return `${(priceCents / 100).toFixed(0)} €`;
 };
 
@@ -27,115 +21,18 @@ const formatDuration = (minutes: number | null | undefined) => {
   return `${minutes} min`;
 };
 
-// Fallback statique (au cas où l'API n'est pas prête / en erreur)
-const STATIC_SERVICES: Service[] = [
-  // --- RITUELS VISAGE ---
-  {
-    id: 1,
-    name: "Rituel Éclat Signature",
-    slug: "rituel-eclat-signature",
-    priceCents: 12000,
-    durationMinutes: 75,
-    category: { name: "Rituels visage", slug: "rituels-visage" },
-  },
-  {
-    id: 2,
-    name: "Hydra Glow",
-    slug: "hydra-glow",
-    priceCents: 9500,
-    durationMinutes: 60,
-    category: { name: "Rituels visage", slug: "rituels-visage" },
-  },
-  {
-    id: 3,
-    name: "Peeling doux rénovateur",
-    slug: "peeling-doux-renovateur",
-    priceCents: 8500,
-    durationMinutes: 45,
-    category: { name: "Rituels visage", slug: "rituels-visage" },
-  },
-  {
-    id: 4,
-    name: "Massage sculptant visage",
-    slug: "massage-sculptant",
-    priceCents: 9000,
-    durationMinutes: 50,
-    category: { name: "Rituels visage", slug: "rituels-visage" },
-  },
-
-  // --- SOINS CORPS ---
-  {
-    id: 5,
-    name: "Modelage relaxant",
-    slug: "modelage-relaxant",
-    priceCents: 9000,
-    durationMinutes: 60,
-    category: { name: "Soins corps", slug: "soins-corps" },
-  },
-  {
-    id: 6,
-    name: "Enveloppement raffermissant",
-    slug: "enveloppement-raffermissant",
-    priceCents: 9500,
-    durationMinutes: 60,
-    category: { name: "Soins corps", slug: "soins-corps" },
-  },
-  {
-    id: 7,
-    name: "Drainage esthétique",
-    slug: "drainage-esthetique",
-    priceCents: 9800,
-    durationMinutes: 60,
-    category: { name: "Soins corps", slug: "soins-corps" },
-  },
-  {
-    id: 8,
-    name: "Soin jambes légères",
-    slug: "soin-jambes-legeres",
-    priceCents: 7500,
-    durationMinutes: 40,
-    category: { name: "Soins corps", slug: "soins-corps" },
-  },
-
-  // --- BEAUTÉ DU REGARD ---
-  {
-    id: 9,
-    name: "Brow Lift & structuration",
-    slug: "brow-lift",
-    priceCents: 6500,
-    durationMinutes: 45,
-    category: { name: "Beauté du regard", slug: "beaute-du-regard" },
-  },
-  {
-    id: 10,
-    name: "Rehaussement de cils",
-    slug: "rehaussement-cils",
-    priceCents: 7500,
-    durationMinutes: 60,
-    category: { name: "Beauté du regard", slug: "beaute-du-regard" },
-  },
-  {
-    id: 11,
-    name: "Teinture cils & sourcils",
-    slug: "teinture-cils-sourcils",
-    priceCents: 4500,
-    durationMinutes: 30,
-    category: { name: "Beauté du regard", slug: "beaute-du-regard" },
-  },
-  {
-    id: 12,
-    name: "Soin contour des yeux",
-    slug: "soin-contour-yeux",
-    priceCents: 6000,
-    durationMinutes: 35,
-    category: { name: "Beauté du regard", slug: "beaute-du-regard" },
-  },
+// Fallback statique (si besoin)
+const STATIC_SERVICES: PricingServiceApi[] = [
+  // ...
 ];
 
 export default function PricingPage() {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<PricingServiceApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -143,24 +40,20 @@ export default function PricingPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("http://localhost:3000/api/services");
-        if (!res.ok) throw new Error("Erreur lors du chargement des soins");
+        const data = await apiGetPricingServices(); 
+        // data : PricingServiceApi[] | { services: PricingServiceApi[] }
 
-        const data = await res.json();
-
-        // On suppose que l'API renvoie un tableau de services avec category incluse
-        if (Array.isArray(data.services)) {
-          setServices(data.services);
-        } else if (Array.isArray(data)) {
+        if (Array.isArray(data)) {
+          // cas 1 : l'API renvoie directement un tableau
           setServices(data);
         } else {
-          // si la structure ne matche pas, on bascule sur le fallback
-          setServices(STATIC_SERVICES);
+          // cas 2 : l'API renvoie { services: [...] }
+          setServices(data.services);
         }
       } catch (err) {
         console.error(err);
         setError("Impossible de charger la carte des soins pour le moment.");
-        setServices(STATIC_SERVICES); // fallback
+        setServices(STATIC_SERVICES);
       } finally {
         setLoading(false);
       }
@@ -169,6 +62,27 @@ export default function PricingPage() {
     fetchServices();
   }, []);
 
+  const handleDeleteService = async (id: number) => {
+    const ok = window.confirm(
+      "Supprimer ce soin et tous les rendez-vous associés ?"
+    );
+    if (!ok) return;
+
+    try {
+      setError(null);
+      await apiDeleteService(id); // typé côté apiClient
+
+      setServices((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de supprimer ce soin pour le moment."
+      );
+    }
+  };
+
   const grouped: GroupedServices = services.reduce((acc, service) => {
     const catName = service.category?.name ?? "Autres soins";
     if (!acc[catName]) acc[catName] = [];
@@ -176,11 +90,7 @@ export default function PricingPage() {
     return acc;
   }, {} as GroupedServices);
 
-  const categoryOrder = [
-    "Rituels visage",
-    "Soins corps",
-    "Beauté du regard",
-  ];
+  const categoryOrder = ["Rituels visage", "Soins corps", "Beauté du regard"];
 
   const sortedCategories = Object.keys(grouped).sort((a, b) => {
     const ia = categoryOrder.indexOf(a);
@@ -225,17 +135,40 @@ export default function PricingPage() {
           <div className="space-y-10">
             {sortedCategories.map((categoryName) => {
               const items = grouped[categoryName];
+              const categorySlug = items[0]?.category?.slug;
 
               return (
                 <section key={categoryName} className="space-y-4">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
-                      {categoryName}
-                    </h2>
-                    <p className="text-xs md:text-sm text-slate-600">
-                      Des protocoles conçus pour sublimer votre beauté
-                      naturelle en respectant votre peau et vos besoins.
-                    </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                        {categoryName}
+                      </h2>
+                      <p className="text-xs md:text-sm text-slate-600">
+                        Des protocoles conçus pour sublimer votre beauté
+                        naturelle en respectant votre peau et vos besoins.
+                      </p>
+                    </div>
+
+                    {/* Bouton admin : ajouter un soin dans cette catégorie */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            categorySlug
+                              ? `/services?category=${categorySlug}`
+                              : "/services"
+                          )
+                        }
+                        className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[0.75rem] font-medium text-emerald-800 hover:bg-emerald-100 transition"
+                      >
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px]">
+                          +
+                        </span>
+                        Ajouter un soin
+                      </button>
+                    )}
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-[#ead8c7] bg-white/90 shadow-sm">
@@ -251,6 +184,11 @@ export default function PricingPage() {
                           <th className="px-4 py-3 text-right font-medium">
                             Tarifs TTC
                           </th>
+                          {isAdmin && (
+                            <th className="px-4 py-3 text-right font-medium">
+                              Actions
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -262,9 +200,14 @@ export default function PricingPage() {
                             }
                           >
                             <td className="px-4 py-3 align-top">
-                              <p className="font-medium text-slate-900">
+                              <button
+                                onClick={() =>
+                                  navigate(`/soins/${service.slug}`)
+                                }
+                                className="font-medium text-slate-900 hover:underline hover:text-slate-700 transition"
+                              >
                                 {service.name}
-                              </p>
+                              </button>
                             </td>
                             <td className="px-4 py-3 align-top text-slate-600">
                               {formatDuration(service.durationMinutes)}
@@ -272,6 +215,20 @@ export default function PricingPage() {
                             <td className="px-4 py-3 align-top text-right font-semibold text-slate-900">
                               {formatPrice(service.priceCents)}
                             </td>
+
+                            {isAdmin && (
+                              <td className="px-4 py-3 align-top text-right">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDeleteService(service.id)
+                                  }
+                                  className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[0.7rem] font-medium text-rose-700 hover:bg-rose-100 transition"
+                                >
+                                  Supprimer
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

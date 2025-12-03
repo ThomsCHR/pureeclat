@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const JWT_EXPIRES_IN = "1h";
 
-function createToken(payload: { userId: number; role: string }) {
+function createToken(payload: { userId: number; role: string; isAdmin?: boolean }) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
@@ -45,7 +45,7 @@ export async function register(req: Request, res: Response) {
       },
     });
 
-    const token = createToken({ userId: user.id, role: user.role });
+    const token = createToken({ userId: user.id, role: user.role, isAdmin: user.isAdmin });
 
     return res.status(201).json({
       token,
@@ -94,7 +94,7 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ message: "Identifiants incorrects." });
     }
 
-    const token = createToken({ userId: user.id, role: user.role });
+    const token = createToken({ userId: user.id, role: user.role, isAdmin: user.isAdmin });
 
     return res.json({
       token,

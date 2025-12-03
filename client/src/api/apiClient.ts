@@ -45,11 +45,30 @@ export async function request<TResponse = unknown>(
 
 /* --------- TYPES METIER --------- */
 
+export type ServiceOptionApi = {
+  id: number;
+  name: string;
+  duration: number | null;
+  priceCents: number;
+};
+
+export type ServiceCategoryApi = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
 export type ServiceApi = {
   id: number;
   name: string;
   slug: string;
-  durationMinutes: number | null;
+  shortDescription?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  durationMinutes?: number | null;
+  priceCents?: number | null;
+  category?: ServiceCategoryApi;
+  options?: ServiceOptionApi[];
 };
 
 export type AvailabilitySlotApi = {
@@ -159,4 +178,71 @@ export function apiCancelAppointment(id: number) {
       method: "POST",
     }
   );
+}
+export type AdminUserApi = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  role: string;
+};
+
+export type AdminAppointmentStatusApi = "BOOKED" | "COMPLETED" | "CANCELLED";
+
+export type AdminClientAppointmentApi = {
+  id: number;
+  startAt: string;
+  status: AdminAppointmentStatusApi;
+  serviceName: string;
+  practitionerName: string;
+};
+
+export type AdminPractitionerAppointmentApi = {
+  id: number;
+  startAt: string;
+  status: AdminAppointmentStatusApi;
+  serviceName: string;
+  clientName: string;
+};
+
+// ---- Fonctions Admin ----
+
+export function apiGetUsers() {
+  return request<{ users: AdminUserApi[] }>("/api/users");
+}
+
+export function apiGetUserAppointments(userId: number) {
+  return request<{
+    user: AdminUserApi;
+    clientAppointments: AdminClientAppointmentApi[];
+    practitionerAppointments: AdminPractitionerAppointmentApi[];
+  }>(`/api/users/${userId}/appointments`);
+}
+
+// ---- Types pour la carte des soins ----
+export type PricingServiceApi = {
+  id: number;
+  name: string;
+  slug: string;
+  priceCents: number | null;
+  durationMinutes: number | null;
+  category: {
+    name: string;
+    slug: string;
+  };
+};
+
+// Liste de tous les services (pour la page tarifs)
+export function apiGetPricingServices() {
+  return request<PricingServiceApi[] | { services: PricingServiceApi[] }>(
+    "/api/services"
+  );
+}
+
+// Suppression d'un service (admin)
+export function apiDeleteService(id: number) {
+  return request<{ message: string }>(`/api/services/${id}`, {
+    method: "DELETE",
+  });
 }

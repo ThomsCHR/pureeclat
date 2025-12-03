@@ -77,49 +77,58 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/**
- * POST /api/appointments/:id/cancel
- * Annule un rendez-vous de l'utilisateur connecté
- */
 export const cancelAppointment = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non authentifié." });
     }
 
-    const userId = req.user.id;
     const appointmentId = Number(req.params.id);
 
     if (Number.isNaN(appointmentId)) {
       return res.status(400).json({ message: "ID de rendez-vous invalide." });
     }
 
+    // On récupère le RDV
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
     });
 
-    if (!appointment || appointment.userId !== userId) {
+    if (!appointment) {
       return res.status(404).json({ message: "Rendez-vous introuvable." });
+    }
+
+    const isOwner = appointment.userId === req.user.id;
+    const isAdmin = req.user.isAdmin === true;
+
+    // ❌ Si ni propriétaire ni admin → interdit
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        message: "Vous n'êtes pas autorisé à annuler ce rendez-vous.",
+      });
     }
 
     const now = new Date();
     if (appointment.startAt < now) {
-      return res
-        .status(400)
-        .json({ message: "Vous ne pouvez plus annuler ce rendez-vous." });
+      return res.status(400).json({
+        message: "Vous ne pouvez plus annuler un rendez-vous passé.",
+      });
     }
 
+    // On annule
     const updated = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: AppointmentStatus.CANCELLED },
     });
 
     return res.json({
-      message: "Rendez-vous annulé.",
+      message: isAdmin
+        ? "Rendez-vous annulé par l'administrateur."
+        : "Rendez-vous annulé.",
       appointment: updated,
     });
   } catch (error) {
-    console.error(error);
+    console.error("cancelAppointment error:", error);
     return res
       .status(500)
       .json({ message: "Erreur lors de l'annulation du rendez-vous." });

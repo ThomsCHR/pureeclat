@@ -6,6 +6,9 @@ import authRoutes from "../routers/authRoutes";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
 import appointmentRoutes from "../routers/appointmentRoutes";
 import availabilityRoutes from "../routers/availabilityRoutes";
+import categoryRoutes from "../routers/categoryRoutes";
+import userRoutes from "../routers/userRoutes";
+
 
 
 
@@ -20,6 +23,8 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/api/me", authMiddleware, (req, res) => {
   // @ts-ignore (ou mieux : typage avec AuthRequest)
