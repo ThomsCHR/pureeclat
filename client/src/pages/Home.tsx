@@ -165,7 +165,6 @@ export default function Home() {
       </section>
 
       {/* SECTION ADRESSES */}
-      {/* SECTION ADRESSES */}
       <section id="addresses" className="bg-white py-20">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
@@ -310,7 +309,7 @@ export default function Home() {
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {[
               {
-                city: "Paris 16-",
+                city: "Paris 16",
                 img: "/images/Paris.png",
               },
               {
