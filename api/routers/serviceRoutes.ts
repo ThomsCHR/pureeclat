@@ -1,6 +1,6 @@
 
 import { Router } from "express";
-import { getAllServices, getServiceBySlug, createService, deleteService } from "../controllers/serviceController";
+import { getAllServices, getServiceBySlug, createService, deleteService, updateService } from "../controllers/serviceController";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
 import { create } from "domain";
 
@@ -11,6 +11,7 @@ router.get("/", getAllServices);
 
 
 router.post("/", authMiddleware, requireAdmin, createService);
+router.put("/:id", authMiddleware, requireAdmin, updateService);
 router.delete("/:id", authMiddleware, requireAdmin, deleteService);
 
 

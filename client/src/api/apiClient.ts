@@ -246,3 +246,22 @@ export function apiDeleteService(id: number) {
     method: "DELETE",
   });
 }
+
+export function apiUpdateService(
+  id: number,
+  body: {
+    name?: string;
+    shortDescription?: string | null;
+    description?: string | null;
+    priceCents?: number | null;
+    durationMinutes?: number | null;
+    imageUrl?: string | null;
+    categoryId?: number;
+    isActive?: boolean;
+  }
+) {
+  return request<ServiceApi>(`/api/services/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
