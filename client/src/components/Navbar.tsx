@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MiniLoader from "../components/MiniLoader";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 
 const sections = [
-  { id: "solutions", label: "Solutions" },
+  { id: "solutions", label: "Rituels" },
   { id: "addresses", label: "Adresses" },
   { id: "about", label: "À propos" },
   { id: "guides", label: "Nos guides" },
@@ -17,7 +17,7 @@ export default function Navbar() {
   const [openSolutions, setOpenSolutions] = useState(false);
 
   // ✅ on utilise ton hook d'auth
-  const { isAuthenticated, } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const handleLogoClick = () => {
     setLoading(true);
@@ -32,16 +32,15 @@ export default function Navbar() {
     navigate(`/soins/${slug}`);
   };
 
-const handleAuthClick = () => {
-  if (isAuthenticated) {
-    // 🔹 Quand connecté → aller vers le profil
-    navigate("/profil");
-  } else {
-    // 🔹 Quand pas connecté → aller vers la page de connexion
-    navigate("/connexion");
-  }
-};
-
+  const handleAuthClick = () => {
+    if (isAuthenticated) {
+      // 🔹 Quand connecté → aller vers le profil
+      navigate("/profil");
+    } else {
+      // 🔹 Quand pas connecté → aller vers la page de connexion
+      navigate("/connexion");
+    }
+  };
 
   return (
     <>
@@ -66,7 +65,7 @@ const handleAuthClick = () => {
               onMouseLeave={() => setOpenSolutions(false)}
             >
               <button className="transition hover:text-rose-300">
-                Solutions
+                Rituels
               </button>
 
               {/* Mega Menu */}
@@ -230,8 +229,17 @@ const handleAuthClick = () => {
                 <button
                   key={s.id}
                   onClick={() => {
-                    const el = document.getElementById(s.id);
-                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    if (s.id === "pricing") {
+                      // 👉 Redirection vers la page tarifs
+                      navigate("/tarifs");
+                    } else {
+                      // 👉 Scroll vers la section sur la home
+                      const el = document.getElementById(s.id);
+                      el?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    }
                   }}
                   className="transition hover:text-rose-300"
                 >

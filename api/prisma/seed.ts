@@ -325,6 +325,7 @@ async function main() {
       role: UserRole.ESTHETICIENNE,
       phone: "0611111111",
       isActive: true,
+      isAdmin: true,
     },
   });
 
@@ -339,6 +340,7 @@ async function main() {
       role: UserRole.ESTHETICIENNE,
       phone: "0621111111",
       isActive: true,
+      isAdmin: true,
     },
   });
 

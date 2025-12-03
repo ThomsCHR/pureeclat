@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  apiGetMyAppointments,
+  apiGetMyPractitionerAppointments,
+  apiCancelAppointment,
+} from "../api/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 type AppointmentStatus = "upcoming" | "past" | "cancelled";
 
@@ -22,21 +28,16 @@ type PractitionerAppointment = {
 
 type UserRole = "CLIENT" | "ADMIN" | "ESTHETICIENNE";
 
-type User = {
-  id: number;
-  firstName?: string;
-  lastName?: string;
-  email: string;
-  role?: UserRole;
-};
-
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<UserRole | null>(null);
+  // rôle dérivé de l'utilisateur du contexte
+  const role: UserRole | null = (user?.role as UserRole) ?? null;
 
-  const [clientAppointments, setClientAppointments] = useState<ClientAppointment[]>([]);
+  const [clientAppointments, setClientAppointments] = useState<
+    ClientAppointment[]
+  >([]);
   const [practitionerAppointments, setPractitionerAppointments] = useState<
     PractitionerAppointment[]
   >([]);
@@ -48,28 +49,15 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
   // vue du profil : en tant que cliente ou praticienne
-  const [profileMode, setProfileMode] = useState<"client" | "practitioner">("client");
+  const [profileMode, setProfileMode] = useState<"client" | "practitioner">(
+    "client"
+  );
 
-  // Récupérer user + RDV client
+  // Récupérer RDV client
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const storedUser = localStorage.getItem("authUser");
-
-    if (!token) {
+    if (!isAuthenticated) {
       navigate("/connexion");
       return;
-    }
-
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed);
-        if (parsed.role) {
-          setRole(parsed.role as UserRole);
-        }
-      } catch {
-        // ignore
-      }
     }
 
     const fetchClientAppointments = async () => {
@@ -77,19 +65,7 @@ export default function ProfilePage() {
         setLoadingClient(true);
         setError(null);
 
-        const res = await fetch("http://localhost:3000/api/appointments/me", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data?.message ?? "Impossible de charger vos rendez-vous.");
-        }
-
+        const data = await apiGetMyAppointments();
         setClientAppointments(data.appointments ?? []);
       } catch (err) {
         console.error(err);
@@ -100,32 +76,16 @@ export default function ProfilePage() {
     };
 
     fetchClientAppointments();
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Récupérer les RDV clients si esthéticienne
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token || role !== "ESTHETICIENNE") return;
+    if (!isAuthenticated || role !== "ESTHETICIENNE") return;
 
     const fetchPractitionerAppointments = async () => {
       try {
         setLoadingPract(true);
-
-        const res = await fetch("http://localhost:3000/api/appointments/practitioner/me", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(
-            data?.message ?? "Impossible de charger les rendez-vous de vos clientes."
-          );
-        }
-
+        const data = await apiGetMyPractitionerAppointments();
         setPractitionerAppointments(data.appointments ?? []);
       } catch (err) {
         console.error(err);
@@ -135,18 +95,16 @@ export default function ProfilePage() {
     };
 
     fetchPractitionerAppointments();
-  }, [role]);
+  }, [isAuthenticated, role]);
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+    logout();          // ← on passe par le contexte
     navigate("/");
   };
 
   // 👉 annulation d'un rendez-vous côté client
   const handleCancelAppointment = async (id: number) => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
+    if (!isAuthenticated) {
       navigate("/connexion");
       return;
     }
@@ -157,24 +115,8 @@ export default function ProfilePage() {
     if (!confirmCancel) return;
 
     try {
-      const res = await fetch(
-        `http://localhost:3000/api/appointments/${id}/cancel`,
-        {
-          method: "POST", // adapte si ton backend utilise POST / PUT
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await apiCancelAppointment(id);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message ?? "Annulation impossible.");
-      }
-
-      // Mise à jour locale : status -> "cancelled"
       setClientAppointments((prev) =>
         prev.map((rdv) =>
           rdv.id === id ? { ...rdv, status: "cancelled" } : rdv
@@ -200,7 +142,9 @@ export default function ProfilePage() {
     });
 
   const filteredClientAppointments = clientAppointments.filter((rdv) =>
-    activeTab === "upcoming" ? rdv.status === "upcoming" : rdv.status !== "upcoming"
+    activeTab === "upcoming"
+      ? rdv.status === "upcoming"
+      : rdv.status !== "upcoming"
   );
 
   const filteredPractAppointments = practitionerAppointments.filter(
@@ -243,13 +187,15 @@ export default function ProfilePage() {
                   : "Client Pure Éclat"}
               </p>
               <p className="text-xs text-white/70">{user?.email}</p>
-              {role && (
+              {user && (
                 <p className="text-[0.7rem] text-white/60 mt-1">
-                  Rôle :{" "}
-                  {role === "ESTHETICIENNE"
+                  Statut :{" "}
+                  {user.isAdmin
+                    ? role === "ESTHETICIENNE"
+                      ? "Administratrice & Esthéticienne"
+                      : "Administratrice"
+                    : role === "ESTHETICIENNE"
                     ? "Esthéticienne"
-                    : role === "ADMIN"
-                    ? "Administratrice"
                     : "Client(e)"}
                 </p>
               )}
@@ -370,7 +316,9 @@ export default function ProfilePage() {
                       </button>
                     </p>
                   ) : (
-                    <p>Vous n&apos;avez pas encore d&apos;historique de soins.</p>
+                    <p>
+                      Vous n&apos;avez pas encore d&apos;historique de soins.
+                    </p>
                   )}
                 </div>
               ) : (
@@ -459,7 +407,7 @@ export default function ProfilePage() {
                             {rdv.treatment}
                           </p>
                           <p className="text-xs text-slate-600">
-                            Cliente : {rdv.clientName}
+                            Client(e) : {rdv.clientName}
                           </p>
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-medium ${

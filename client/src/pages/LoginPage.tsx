@@ -1,18 +1,17 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // adapte le chemin
-
+import { useAuth } from "../context/AuthContext"; 
+import { apiLogin } from "../api/apiClient";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();              // ✅ on récupère login du contexte
-
-  const [email, setEmail]       = useState("");
+  const { login } = useAuth(); 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -21,26 +20,13 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // 👉 appel de ton client API
+      const data = await apiLogin(email, password);
 
-      const data = await res.json();
+      // met à jour le contexte / localStorage pour le token
+      login(data.token, data.user);
 
-      if (!res.ok) {
-        setError(data?.message ?? "Identifiants incorrects.");
-        return;
-      }
-
-      if (data.token) {
-        // 👉 c’est login() qui met à jour le state + localStorage
-        login(data.token);
-      }
-
+      // garder l'utilisateur en cache pour le front
       if (data.user) {
         localStorage.setItem("authUser", JSON.stringify(data.user));
       }
@@ -48,21 +34,23 @@ export default function LoginPage() {
       navigate("/");
     } catch (err) {
       console.error(err);
-      setError("Impossible de vous connecter pour le moment.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de vous connecter pour le moment."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <div className="min-h-screen bg-[#FFF5ED] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl grid gap-8 md:grid-cols-2 items-stretch rounded-3xl bg-white/80 shadow-xl border border-[#f0dfd0] overflow-hidden">
-
         {/* Colonne gauche : visuel / branding */}
         <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-black via-[#1a1412] to-black text-white p-8 relative">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_#f9b6c8_0,_transparent_60%)]" />
-          
+
           <div className="relative space-y-6">
             <button
               onClick={() => navigate("/")}
@@ -75,12 +63,10 @@ export default function LoginPage() {
               <p className="text-[0.7rem] uppercase tracking-[0.3em] text-rose-200/80">
                 espace client
               </p>
-              <h1 className="text-3xl font-semibold">
-                Pure Éclat
-              </h1>
+              <h1 className="text-3xl font-semibold">Pure Éclat</h1>
               <p className="text-sm text-white/80 leading-relaxed">
-                Accédez à votre espace pour gérer vos rendez-vous, vos rituels préférés 
-                et vos recommandations personnalisées.
+                Accédez à votre espace pour gérer vos rendez-vous, vos rituels
+                préférés et vos recommandations personnalisées.
               </p>
             </div>
           </div>
@@ -108,7 +94,8 @@ export default function LoginPage() {
               Connexion à votre espace
             </h2>
             <p className="text-sm text-slate-600">
-              Heureux de vous revoir. Entrez vos identifiants pour accéder à vos soins.
+              Heureux de vous revoir. Entrez vos identifiants pour accéder à vos
+              soins.
             </p>
           </div>
 
@@ -181,7 +168,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg黑 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span>{loading ? "Connexion..." : "Se connecter"}</span>
               {!loading && (

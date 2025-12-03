@@ -1,23 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
+import { apiCreateAppointment, apiGetAvailability, apiGetServiceBySlug} from "../api/apiClient";
+import type { PractitionerAvailabilityApi } from "../api/apiClient";
 
-type AvailabilitySlot = {
-  start: string; // ISO
-  end: string; // ISO
-};
 
-type PractitionerAvailability = {
-  practitionerId: number;
-  practitionerName: string;
-  slots: AvailabilitySlot[];
-};
+type AvailabilitySlot = PractitionerAvailabilityApi["slots"][number];
+
+type PractitionerAvailability = PractitionerAvailabilityApi;
 
 type ServiceLight = {
   id: number;
   name: string;
   slug: string;
-  durationMinutes?: number | null;
+  durationMinutes: number | null;
 };
 
 const getPractitionerSubtitle = (name: string) => {
@@ -57,69 +53,54 @@ export default function BookingPage() {
   }, [isAuthenticated, navigate]);
 
   // Charger le service (id + nom) à partir du slug
-  useEffect(() => {
-    if (!slug) return;
+useEffect(() => {
+  if (!slug) return;
 
-    const fetchService = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchService = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const res = await fetch(`http://localhost:3000/api/services/${slug}`);
-        const data = await res.json();
+      const data = await apiGetServiceBySlug(slug);
 
-        if (!res.ok) {
-          throw new Error(data?.message ?? "Soin introuvable.");
-        }
+      setService({
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        durationMinutes: data.durationMinutes,
+      });
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de charger ce soin.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setService({
-          id: data.id,
-          name: data.name,
-          slug: data.slug,
-          durationMinutes: data.durationMinutes,
-        });
-      } catch (err) {
-        console.error(err);
-        setError("Impossible de charger ce soin.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchService();
-  }, [slug]);
+  fetchService();
+}, [slug]);
 
   // Charger les créneaux disponibles pour une date donnée
-  useEffect(() => {
-    if (!service) return;
+useEffect(() => {
+  if (!service) return;
 
-    const fetchAvailability = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchAvailability = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const res = await fetch(
-          `http://localhost:3000/api/availability?serviceId=${service.id}&date=${date}`
-        );
-        const data = await res.json();
+      const data = await apiGetAvailability(service.id, date);
+      setAvailability(data.practitioners ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible de charger les disponibilités pour cette date.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (!res.ok) {
-          throw new Error(
-            data?.message ?? "Impossible de charger les disponibilités."
-          );
-        }
-
-        setAvailability(data.practitioners ?? []);
-      } catch (err) {
-        console.error(err);
-        setError("Impossible de charger les disponibilités pour cette date.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAvailability();
-  }, [service, date]);
+  fetchAvailability();
+}, [service, date]);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", {
@@ -128,45 +109,32 @@ export default function BookingPage() {
     });
 
   const handleCreateAppointment = async (
-    practitionerId: number,
-    slot: AvailabilitySlot
-  ) => {
-    const token = localStorage.getItem("authToken");
-    if (!token || !service) return;
+  practitionerId: number,
+  slot: AvailabilitySlot
+) => {
+  if (!service) return;
 
-    try {
-      setCreating(true);
+  try {
+    setCreating(true);
 
-      const res = await fetch("http://localhost:3000/api/appointments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          serviceId: service.id,
-          practitionerId,
-          startAt: slot.start,
-        }),
-      });
+    await apiCreateAppointment({
+      serviceId: service.id,
+      practitionerId,
+      startAt: slot.start,
+    });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message ?? "Impossible de créer le rendez-vous.");
-      }
-
-      // ✅ tout OK → redirection vers le profil
-      navigate("/profil");
-    } catch (err) {
-      console.error(err);
-      alert("Impossible de réserver ce créneau pour le moment.");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  if (!slug) return null;
+    navigate("/profil");
+  } catch (err) {
+    console.error(err);
+    alert(
+      err instanceof Error
+        ? err.message
+        : "Impossible de réserver ce créneau pour le moment."
+    );
+  } finally {
+    setCreating(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">

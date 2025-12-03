@@ -1,31 +1,61 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
+
+export type AuthUser = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  isAdmin?: boolean;
+};
 
 type AuthContextType = {
+  user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, user: AuthUser) => void;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const stored = localStorage.getItem("authUser");
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as AuthUser;
+    } catch {
+      localStorage.removeItem("authUser");
+      return null;
+    }
+  });
+
   const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("authToken")   // 🔹 même clé que dans la LoginPage
+    !!localStorage.getItem("authToken") && user !== null
   );
 
-  const login = (token: string) => {
-    localStorage.setItem("authToken", token);  // 🔹 même clé
+  const login = (token: string, nextUser: AuthUser) => {
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("authUser", JSON.stringify(nextUser));
+    setUser(nextUser);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
     localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
+    setUser(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

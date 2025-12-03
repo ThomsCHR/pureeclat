@@ -1,19 +1,22 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRegister } from "../api/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [phone, setPhone]         = useState("");
-  const [password, setPassword]   = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,41 +30,29 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          phone: phone || undefined,
-          password,
-        }),
+      const data = await apiRegister({
+        firstName,
+        lastName,
+        email,
+        phone: phone || undefined,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        // backend renvoie { message: "..."}
-        setError(data?.message ?? "Une erreur est survenue lors de l'inscription.");
-        return;
+      if (!data.user) {
+        throw new Error("Réponse invalide du serveur : utilisateur manquant.");
       }
 
-      // Succès -> token + user dans localStorage
-      if (data.token) {
-        localStorage.setItem("authToken", data.token);
-      }
-      if (data.user) {
-        localStorage.setItem("authUser", JSON.stringify(data.user));
-      }
-
-      // Redirection après inscription
+      // ✅ on laisse le contexte gérer token + user + localStorage
+      login(data.token, data.user);
+      
       navigate("/");
     } catch (err) {
       console.error(err);
-      setError("Impossible de créer votre compte pour le moment.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de créer votre compte pour le moment."
+      );
     } finally {
       setLoading(false);
     }
@@ -70,7 +61,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#FFF5ED] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl grid gap-8 md:grid-cols-2 items-stretch rounded-3xl bg-white/80 shadow-xl border border-[#f0dfd0] overflow-hidden">
-
         {/* Colonne gauche : visuel / branding */}
         <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-black via-[#1a1412] to-black text-white p-8 relative">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_#f9b6c8_0,_transparent_60%)]" />
@@ -87,12 +77,11 @@ export default function RegisterPage() {
               <p className="text-[0.7rem] uppercase tracking-[0.3em] text-rose-200/80">
                 créer mon espace
               </p>
-              <h1 className="text-3xl font-semibold">
-                Rejoindre Pure Éclat
-              </h1>
+              <h1 className="text-3xl font-semibold">Rejoindre Pure Éclat</h1>
               <p className="text-sm text-white/80 leading-relaxed">
-                Créez votre espace personnel pour suivre vos rendez-vous, 
-                conserver vos rituels favoris et accéder aux offres privilégiées de l&apos;institut.
+                Créez votre espace personnel pour suivre vos rendez-vous,
+                conserver vos rituels favoris et accéder aux offres privilégiées
+                de l&apos;institut.
               </p>
             </div>
           </div>
@@ -120,7 +109,8 @@ export default function RegisterPage() {
               Créer mon compte
             </h2>
             <p className="text-sm text-slate-600">
-              Quelques informations suffisent pour personnaliser vos expériences Pure Éclat.
+              Quelques informations suffisent pour personnaliser vos expériences
+              Pure Éclat.
             </p>
           </div>
 
@@ -273,7 +263,9 @@ export default function RegisterPage() {
               disabled={loading}
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <span>{loading ? "Création du compte..." : "Créer mon compte"}</span>
+              <span>
+                {loading ? "Création du compte..." : "Créer mon compte"}
+              </span>
               {!loading && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] text-black">
                   →

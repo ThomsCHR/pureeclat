@@ -56,6 +56,7 @@ export async function register(req: Request, res: Response) {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (error) {
@@ -104,6 +105,7 @@ export async function login(req: Request, res: Response) {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (error) {
