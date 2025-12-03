@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
+
     "strict": false,
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -15,5 +16,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["src", "prisma/seed.ts"]
+  "include": ["src"]
 }
