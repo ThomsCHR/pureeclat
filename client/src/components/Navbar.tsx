@@ -52,7 +52,7 @@ export default function Navbar() {
               src="/images/logo-pee.png"
               alt="Logo Pure Éclat"
               onClick={handleLogoClick}
-              className="h-16 w-auto cursor-pointer select-none"
+              className="h-16 w-auto cursor-pointer select-none logo-glow transition-transform duration-300 hover:scale-105"
             />
           </div>
 

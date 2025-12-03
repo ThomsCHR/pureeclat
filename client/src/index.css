@@ -18,3 +18,18 @@
 .animate-fadeIn {
   animation: fadeIn 1.2s ease-out forwards;
 }
+@keyframes logoGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.9));
+    transform: scale(1.03);
+  }
+}
+
+/* Classe custom pour le logo */
+.logo-glow {
+  animation: logoGlow 5s ease-in-out infinite;
+}

@@ -17,6 +17,7 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       setError(null);
+      setInfo(null);
 
       const data = await apiRegister({
         firstName,
@@ -42,10 +44,14 @@ export default function RegisterPage() {
         throw new Error("Réponse invalide du serveur : utilisateur manquant.");
       }
 
-      // ✅ on laisse le contexte gérer token + user + localStorage
       login(data.token, data.user);
-      
-      navigate("/");
+
+      // 🔔 petit message info (au cas où tu restes sur la page)
+      setInfo(
+        "Votre compte a été créé. Un email de vérification vous a été envoyé, pensez à vérifier vos spams."
+      );
+
+      navigate("/"); // tu peux garder ça comme avant
     } catch (err) {
       console.error(err);
       setError(
@@ -92,6 +98,11 @@ export default function RegisterPage() {
             <p>• Accès anticipé aux nouveautés et événements</p>
           </div>
         </div>
+        {info && (
+          <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700">
+            {info}
+          </div>
+        )}
 
         {/* Colonne droite : formulaire */}
         <div className="p-6 md:p-8 flex flex-col justify-center">
