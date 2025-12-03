@@ -4,11 +4,9 @@ import AnimatedCard from "../components/AnimatedCard";
 import AnimatedHeroImage from "../components/AnimatedHeroImage";
 import { useNavigate } from "react-router-dom";
 
-
 export default function Home() {
   const navigate = useNavigate();
   return (
-    
     <div className="bg-white text-slate-900">
       {/* HERO */}
       <section id="hero" className="relative overflow-hidden min-h-screen">
@@ -43,7 +41,9 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
-              <ButtonExplore>Découvrir les soins</ButtonExplore>
+              <ButtonExplore onClick={() => navigate("/soins")}>
+                Découvrir les soins
+              </ButtonExplore>
             </div>
 
             <div className="flex gap-6 pt-4 text-xs text-white/90">

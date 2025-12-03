@@ -11,6 +11,8 @@ import PricingPage from "./pages/PricingPage";
 import AddServicePage from "./pages/AddServicePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminUserAppointmentsPage from "./pages/AdminUserAppointmentsPage";
+import ServicesListPage from "./pages/ServicesListPage";
+
 
 
 
@@ -31,6 +33,8 @@ function App() {
         <Route path="/services" element={<AddServicePage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/users/:id/appointments" element={<AdminUserAppointmentsPage />} />
+        <Route path="/soins" element={<ServicesListPage />} />
+        
       </Routes>
     </BrowserRouter>
   );
