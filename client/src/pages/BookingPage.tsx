@@ -40,6 +40,10 @@ export default function BookingPage() {
     const today = new Date();
     return today.toISOString().slice(0, 10); // YYYY-MM-DD
   });
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isTodaySelected = date === todayStr;
+
   const [loading, setLoading] = useState(true);
   const [availability, setAvailability] = useState<PractitionerAvailability[]>(
     []
@@ -69,7 +73,7 @@ export default function BookingPage() {
           id: data.id,
           name: data.name,
           slug: data.slug,
-          durationMinutes: data.durationMinutes ?? null, // 👈 ici
+          durationMinutes: data.durationMinutes ?? null,
         });
       } catch (err) {
         console.error(err);
@@ -92,7 +96,26 @@ export default function BookingPage() {
         setError(null);
 
         const data = await apiGetAvailability(service.id, date);
-        setAvailability(data.practitioners ?? []);
+        const practitioners = data.practitioners ?? [];
+
+        // 🕒 Si on est sur la date du jour, vérifier s'il reste au moins un créneau futur
+        if (date === todayStr) {
+          const now = new Date();
+
+          const hasFutureSlot = practitioners.some((p) =>
+            p.slots.some((slot) => new Date(slot.start) > now)
+          );
+
+          // S'il n'y a plus aucun créneau futur aujourd'hui → passer automatiquement au lendemain
+          if (!hasFutureSlot) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            setDate(tomorrow.toISOString().slice(0, 10));
+            return; // on ne set pas l'availability pour aujourd'hui
+          }
+        }
+
+        setAvailability(practitioners);
       } catch (err) {
         console.error(err);
         setError("Impossible de charger les disponibilités pour cette date.");
@@ -102,7 +125,7 @@ export default function BookingPage() {
     };
 
     fetchAvailability();
-  }, [service, date]);
+  }, [service, date, todayStr]);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", {
@@ -137,6 +160,8 @@ export default function BookingPage() {
       setCreating(false);
     }
   };
+
+  const now = new Date();
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
@@ -174,6 +199,7 @@ export default function BookingPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              min={todayStr} // ⬅️ pas de date passée
               className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
             />
           </div>
@@ -198,43 +224,59 @@ export default function BookingPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {availability.map((pract) => (
-                  <div
-                    key={pract.practitionerId}
-                    className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {pract.practitionerName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {getPractitionerSubtitle(pract.practitionerName)}
-                        </p>
-                      </div>
-                      {service?.durationMinutes && (
-                        <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.7rem] text-slate-700">
-                          Durée estimée : {service.durationMinutes} min
-                        </span>
-                      )}
-                    </div>
+                {availability.map((pract) => {
+                  // On filtre les créneaux passés si la date sélectionnée est aujourd'hui
+                  const visibleSlots = pract.slots.filter((slot) => {
+                    if (!isTodaySelected) return true;
+                    const startDate = new Date(slot.start);
+                    return startDate > now;
+                  });
 
-                    <div className="flex flex-wrap gap-2">
-                      {pract.slots.map((slot) => (
-                        <button
-                          key={slot.start}
-                          disabled={creating}
-                          onClick={() =>
-                            handleCreateAppointment(pract.practitionerId, slot)
-                          }
-                          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-black hover:text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          {formatTime(slot.start)} – {formatTime(slot.end)}
-                        </button>
-                      ))}
+                  if (visibleSlots.length === 0) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={pract.practitionerId}
+                      className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {pract.practitionerName}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {getPractitionerSubtitle(pract.practitionerName)}
+                          </p>
+                        </div>
+                        {service?.durationMinutes && (
+                          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.7rem] text-slate-700">
+                            Durée estimée : {service.durationMinutes} min
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {visibleSlots.map((slot) => (
+                          <button
+                            key={slot.start}
+                            disabled={creating}
+                            onClick={() =>
+                              handleCreateAppointment(
+                                pract.practitionerId,
+                                slot
+                              )
+                            }
+                            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 hover:bg-black hover:text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {formatTime(slot.start)} – {formatTime(slot.end)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>

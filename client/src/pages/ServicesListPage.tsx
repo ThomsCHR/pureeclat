@@ -124,7 +124,7 @@ export default function ServicesListPage() {
         <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold leading-tight">
-              Tous nos soins & tarifs
+              Tous nos soins
             </h1>
             <p className="mt-2 text-sm md:text-base text-slate-700 max-w-xl">
               Explorez l’ensemble des soins proposés, classés par catégorie,

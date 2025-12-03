@@ -437,7 +437,7 @@ export default function Home() {
             dédiée.
           </p>
           <button
-            onClick={() => navigate("/tarifs")}
+            onClick={() => navigate("/soins")}
             className="mt-6 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-black"
           >
             Découvrir la carte des soins
