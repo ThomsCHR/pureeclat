@@ -13,18 +13,18 @@ export default function AnimatedHeroImage() {
         ease: "easeInOut",
         repeatType: "reverse",
       }}
-      className="pointer-events-none absolute inset-y-0 right-[0] w-[100%] hidden md:block overflow-hidden"
+      className="h-full w-full overflow-hidden"
     >
       <img
-        src="/images/acc1-1920.jpg"
+        src="/images/home.png"
         srcSet="
-          /images/acc1.jpg 1920w,
-          /images/acc1-2560.jpg 2560w,
-          /images/acc1-3840.jpg 3840w
+          /images/home.png,
+          /images/home.png,
+          /images/home.png
         "
         sizes="100vw"
         alt="Visuel esthétique"
-        className="h-full w-full object-cover object-center"
+        className="h-full w-full object-cover"
       />
     </motion.div>
   );
