@@ -50,13 +50,8 @@ export default function Navbar() {
       return;
     }
 
-    // scroll vers la section de la home
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      navigate("/"); // fallback : on revient à l’accueil
-    }
+    // 👉 on passe toujours par la home avec un paramètre de section
+    navigate(`/?section=${id}`);
   };
 
   return (
@@ -285,7 +280,7 @@ export default function Navbar() {
 
           {/* Bouton menu mobile */}
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur border border-white/30 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg:white/20 backdrop-blur border border-white/30 md:hidden"
             onClick={() => setMobileOpen((prev) => !prev)}
           >
             <div className="space-y-1">
@@ -299,7 +294,6 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="md:hidden bg-black/95 text-white border-t border-white/10">
             <div className="mx-auto max-w-6xl px-4 py-4 space-y-3 text-sm">
-              
               {/* Autres liens */}
               <div className="pt-2 border-t border-white/10 space-y-2">
                 {sections
@@ -308,7 +302,7 @@ export default function Navbar() {
                     <button
                       key={s.id}
                       onClick={() => handleSectionClick(s.id)}
-                      className="block w-full text-left text-sm text-white/90 hover:text-rose-300"
+                      className="block w-full text-left text-sm text:white/90 hover:text-rose-300"
                     >
                       {s.label}
                     </button>
