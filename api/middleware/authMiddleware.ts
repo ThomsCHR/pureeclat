@@ -1,10 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { UserRole } from "@prisma/client"; // ✅ utilise l'enum Prisma
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-
-// mêmes valeurs que ton enum Prisma UserRole
-export type UserRole = "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN";
 
 export interface AuthUser {
   id: number;
@@ -36,19 +34,23 @@ export function authMiddleware(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
-      role: UserRole;
+      role: UserRole; // ✅ typé Prisma
       isAdmin?: boolean;
     };
 
+    const role = decoded.role;
+
     req.user = {
       id: decoded.userId,
-      role: decoded.role,
-      // est admin si role ADMIN / SUPERADMIN ou flag isAdmin = true
+      role,
+      // un admin = ADMIN ou SUPERADMIN ou un flag isAdmin reçu
       isAdmin:
-        decoded.role === "ADMIN" ||
-        decoded.role === "SUPERADMIN" ||
+        role === UserRole.ADMIN ||
+        role === UserRole.SUPERADMIN ||
         !!decoded.isAdmin,
-        isSuperAdmin: decoded.role === "SUPERADMIN",
+
+      // superadmin uniquement si SUPERADMIN
+      isSuperAdmin: role === UserRole.SUPERADMIN,
     };
 
     return next();
@@ -56,7 +58,7 @@ export function authMiddleware(
     console.error("JWT error:", error);
     return res
       .status(401)
-      .json({ message: "Token d'authentification invalide ou expiré." });
+      .json({ message: "Token invalide ou expiré." });
   }
 }
 
@@ -65,14 +67,7 @@ export function requireAdmin(
   res: Response,
   next: NextFunction
 ) {
-  if (
-    !req.user ||
-    !(
-      req.user.isAdmin ||
-      req.user.role === "ADMIN" ||
-      req.user.role === "SUPERADMIN"
-    )
-  ) {
+  if (!req.user || (!req.user.isAdmin && req.user.role !== UserRole.ADMIN)) {
     return res
       .status(403)
       .json({ message: "Accès réservé à l'administrateur." });
@@ -86,7 +81,7 @@ export function requireSuperAdmin(
   res: Response,
   next: NextFunction
 ) {
-  if (!req.user || req.user.role !== "SUPERADMIN") {
+  if (!req.user || req.user.role !== UserRole.SUPERADMIN) {
     return res
       .status(403)
       .json({ message: "Accès réservé au SUPERADMIN." });

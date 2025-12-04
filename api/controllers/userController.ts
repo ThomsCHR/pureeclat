@@ -2,9 +2,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../src/prisma";
 import type { AuthRequest } from "../middleware/authMiddleware";
-
-// Pour le body de mise à jour de rôle
-type RolePayload = "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN";
+import { UserRole } from "@prisma/client";
 
 // ---------------------------------------------
 // GET /api/users
@@ -116,7 +114,7 @@ export async function getUserAppointments(req: Request, res: Response) {
 export async function updateUserRole(req: AuthRequest, res: Response) {
   try {
     const id = Number(req.params.id);
-    const { role } = req.body as { role?: RolePayload };
+    const { role } = req.body as { role?: UserRole };
 
     if (Number.isNaN(id)) {
       return res.status(400).json({ message: "ID utilisateur invalide." });
@@ -124,6 +122,11 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
 
     if (!role) {
       return res.status(400).json({ message: "Rôle manquant." });
+    }
+
+    // sécurité typée : vérifier que le rôle est bien dans l'enum Prisma
+    if (!Object.values(UserRole).includes(role)) {
+      return res.status(400).json({ message: "Rôle invalide." });
     }
 
     const targetUser = await prisma.user.findUnique({ where: { id } });
@@ -135,14 +138,17 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
     // --- 🔒 RÈGLES DE SÉCURITÉ ---
 
     // 1️⃣ Un ADMIN ne peut PAS modifier un ADMIN
-    if (req.user?.role === "ADMIN" && targetUser.role === "ADMIN") {
+    if (req.user?.role === UserRole.ADMIN && targetUser.role === UserRole.ADMIN) {
       return res.status(403).json({
         message: "Vous ne pouvez pas modifier un autre administrateur.",
       });
     }
 
     // 2️⃣ Un ADMIN ne peut PAS modifier un SUPERADMIN
-    if (req.user?.role === "ADMIN" && targetUser.role === "SUPERADMIN") {
+    if (
+      req.user?.role === UserRole.ADMIN &&
+      targetUser.role === UserRole.SUPERADMIN
+    ) {
       return res.status(403).json({
         message: "Vous ne pouvez pas modifier un SUPERADMIN.",
       });
@@ -150,9 +156,9 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
 
     // 3️⃣ Seul SUPERADMIN peut promouvoir/déclasser un ADMIN
     const isChangingAdminState =
-      targetUser.role === "ADMIN" || role === "ADMIN";
+      targetUser.role === UserRole.ADMIN || role === UserRole.ADMIN;
 
-    if (isChangingAdminState && req.user?.role !== "SUPERADMIN") {
+    if (isChangingAdminState && req.user?.role !== UserRole.SUPERADMIN) {
       return res.status(403).json({
         message: "Seul le SUPERADMIN peut gérer les administrateurs.",
       });
@@ -163,7 +169,7 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
       where: { id },
       data: {
         role,
-        isAdmin: role === "ADMIN" || role === "SUPERADMIN",
+        isAdmin: role === UserRole.ADMIN || role === UserRole.SUPERADMIN,
       },
       select: {
         id: true,
@@ -211,7 +217,11 @@ export async function deleteUser(req: AuthRequest, res: Response) {
     }
 
     // 🔒 sécurité : on ne supprime pas les admins (ADMIN ou SUPERADMIN)
-    if (user.role === "ADMIN" || user.role === "SUPERADMIN" || user.isAdmin) {
+    if (
+      user.role === UserRole.ADMIN ||
+      user.role === UserRole.SUPERADMIN ||
+      user.isAdmin
+    ) {
       return res.status(400).json({
         message: "Impossible de supprimer un compte administrateur.",
       });
