@@ -192,8 +192,8 @@ export default function ProfilePage() {
                   Statut :{" "}
                   {user.isAdmin
                     ? role === "ESTHETICIENNE"
-                      ? "Administratrice & Esthéticienne"
-                      : "Administratrice"
+                      ? "Admin & Esthéticienne"
+                      : "Admin"
                     : role === "ESTHETICIENNE"
                       ? "Esthéticienne"
                       : "Client(e)"}

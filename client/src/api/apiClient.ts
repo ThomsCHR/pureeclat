@@ -179,13 +179,16 @@ export function apiCancelAppointment(id: number) {
     }
   );
 }
+export type UserRoleApi = "CLIENT" | "ADMIN" | "ESTHETICIENNE";
 export type AdminUserApi = {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string | null;
-  role: string;
+  role: UserRoleApi;
+  isActive: boolean;
+  isAdmin?: boolean;
 };
 
 export type AdminAppointmentStatusApi = "BOOKED" | "COMPLETED" | "CANCELLED";
@@ -263,5 +266,13 @@ export function apiUpdateService(
   return request<ServiceApi>(`/api/services/${id}`, {
     method: "PUT",
     body: JSON.stringify(body),
+  });
+}
+
+// Mettre à jour le rôle d'un utilisateur (admin)
+export function apiUpdateUserRole(id: number, role: UserRoleApi) {
+  return request<{ user: AdminUserApi }>(`/api/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
   });
 }

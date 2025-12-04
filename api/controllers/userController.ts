@@ -103,3 +103,49 @@ export async function getUserAppointments(req: Request, res: Response) {
       .json({ message: "Erreur lors du chargement des rendez-vous." });
   }
 }
+export async function updateUserRole(req: Request, res: Response) {
+  try {
+    const id = Number(req.params.id);
+    const { role } = req.body as {
+      role?: "CLIENT" | "ADMIN" | "ESTHETICIENNE";
+    };
+
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ message: "ID utilisateur invalide." });
+    }
+
+    if (!role) {
+      return res.status(400).json({ message: "Rôle manquant." });
+    }
+
+    if (!["CLIENT", "ADMIN", "ESTHETICIENNE"].includes(role)) {
+      return res.status(400).json({ message: "Rôle invalide." });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        role,
+        // en général : ADMIN ⇔ isAdmin = true
+        isAdmin: role === "ADMIN",
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        isAdmin: true,
+      },
+    });
+
+    return res.json({ user });
+  } catch (error) {
+    console.error("Error in updateUserRole:", error);
+    return res
+      .status(500)
+      .json({ message: "Erreur lors de la mise à jour de l'utilisateur." });
+  }
+}

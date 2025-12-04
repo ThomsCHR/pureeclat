@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { apiGetUsers, type AdminUserApi } from "../api/apiClient";
+import {
+  apiGetUsers,
+  apiUpdateUserRole,
+  type AdminUserApi,
+  type UserRoleApi,
+} from "../api/apiClient";
 
 export default function AdminUsersPage() {
   const { isAdmin } = useAuth();
@@ -10,8 +15,10 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [search, setSearch] = useState("");
+
+  // id de l'utilisateur en cours de mise à jour (pour désactiver le select)
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -57,6 +64,22 @@ export default function AdminUsersPage() {
       (normalizedSearchDigits && phone.includes(normalizedSearchDigits))
     );
   });
+
+  // 🔧 Changement de rôle (CLIENT / ADMIN / ESTHETICIENNE)
+  const handleChangeRole = async (userId: number, newRole: UserRoleApi) => {
+    try {
+      setSavingId(userId);
+      const { user } = await apiUpdateUserRole(userId, newRole);
+
+      // mettre à jour la liste locale
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+    } catch (err) {
+      console.error(err);
+      alert("Impossible de mettre à jour le rôle.");
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] px-4 py-20">
@@ -141,7 +164,23 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-4 py-2">{u.email}</td>
                       <td className="px-4 py-2">{u.phone ?? "-"}</td>
-                      <td className="px-4 py-2">{u.role}</td>
+                      <td className="px-4 py-2">
+                        <select
+                          value={u.role}
+                          onChange={(e) =>
+                            handleChangeRole(
+                              u.id,
+                              e.target.value as UserRoleApi
+                            )
+                          }
+                          className="rounded-full border border-slate-300 bg-white px-2 py-1 text-xs"
+                          disabled={savingId === u.id}
+                        >
+                          <option value="CLIENT">Client</option>
+                          <option value="ESTHETICIENNE">Esthéticienne</option>
+                          <option value="ADMIN">Admin</option>
+                        </select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
