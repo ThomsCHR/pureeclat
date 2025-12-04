@@ -25,18 +25,14 @@ model User {
   isActive     Boolean  @default(true)
   isAdmin      Boolean  @default(false)
 
-  /// null = email non vérifié
   emailVerifiedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // RDV où l'utilisateur est client
   clientAppointments       Appointment[] @relation("ClientAppointments")
-  // RDV où l'utilisateur est praticienne
   practitionerAppointments Appointment[] @relation("PractitionerAppointments")
 
-  /// tokens de vérification liés à cet utilisateur
   emailVerificationTokens EmailVerificationToken[]
 }
 
@@ -68,10 +64,8 @@ model Service {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
 
-  options ServiceOption[]
-
-  /// un service peut être réservé dans plusieurs rendez-vous
-  appointments Appointment[]
+  options       ServiceOption[]
+  appointments  Appointment[]
 }
 
 model ServiceOption {
@@ -83,7 +77,6 @@ model ServiceOption {
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
 
-  /// une option peut être utilisée dans plusieurs rendez-vous
   appointments Appointment[]
 }
 
@@ -99,21 +92,11 @@ model Appointment {
 
   // Client
   userId Int
-  user   User @relation(
-    "ClientAppointments",
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user   User @relation("ClientAppointments", fields: [userId], references: [id], onDelete: Cascade)
 
   // Praticienne
   practitionerId Int
-  practitioner   User @relation(
-    "PractitionerAppointments",
-    fields: [practitionerId],
-    references: [id],
-    onDelete: Cascade
-  )
+  practitioner   User @relation("PractitionerAppointments", fields: [practitionerId], references: [id], onDelete: Cascade)
 
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
@@ -130,11 +113,7 @@ model EmailVerificationToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   userId    Int
-  user      User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
