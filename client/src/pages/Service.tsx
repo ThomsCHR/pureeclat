@@ -126,9 +126,7 @@ export default function ServicePage() {
             ? null
             : form.shortDescription.trim(),
         description:
-          form.description.trim() === ""
-            ? null
-            : form.description.trim(),
+          form.description.trim() === "" ? null : form.description.trim(),
         durationMinutes,
         priceCents,
       });
@@ -163,7 +161,7 @@ export default function ServicePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
+      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900 overflow-x-hidden">
         <div className="mx-auto max-w-4xl px-4">
           <p className="animate-pulse text-sm text-slate-500">
             Chargement du soin…
@@ -175,7 +173,7 @@ export default function ServicePage() {
 
   if (error || !service) {
     return (
-      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
+      <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900 overflow-x-hidden">
         <div className="mx-auto max-w-4xl px-4 space-y-4">
           <button
             onClick={() => navigate(-1)}
@@ -193,7 +191,8 @@ export default function ServicePage() {
   const mainPrice = formatPrice(service.priceCents);
 
   return (
-    <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
+    // 🧵 important : on coupe tout débordement horizontal
+    <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900 overflow-x-hidden">
       <section className="mx-auto max-w-6xl px-4 pb-16">
         {/* Breadcrumb */}
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -212,10 +211,10 @@ export default function ServicePage() {
               <span>›</span>
             </>
           )}
-          <span className="text-slate-700">{service.name}</span>
+          <span className="text-slate-700 break-words">{service.name}</span>
 
           {isAdmin && (
-            <span className="ml-auto text-[11px] text-slate-400">
+            <span className="ml-auto text-[11px] text-slate-400 whitespace-nowrap">
               Mode admin {saving && "• enregistrement..."}
             </span>
           )}
@@ -276,7 +275,7 @@ export default function ServicePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing((v) => !v)}
-                  className="text-xs rounded-full border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-100"
+                  className="text-xs rounded-full border border-slate-300 bg-white px-3 py-1 font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
                 >
                   {isEditing ? "Fermer l'édition" : "Modifier le soin"}
                 </button>
@@ -290,7 +289,7 @@ export default function ServicePage() {
             )}
 
             {service.description && (
-              <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+              <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line break-words">
                 {service.description}
               </p>
             )}
@@ -333,7 +332,7 @@ export default function ServicePage() {
               </span>
             </button>
 
-            {/* Bloc options (inchangé) */}
+            {/* Bloc options */}
             {service.options && service.options.length > 0 && (
               <div className="mt-6 rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">
@@ -368,7 +367,7 @@ export default function ServicePage() {
 
         {/* 🛠 Panneau d'édition admin */}
         {isAdmin && isEditing && form && (
-          <div className="mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+          <div className="mt-10 w-full max-w-3xl mx-auto rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900 mb-4">
               Modifier les informations du soin
             </h2>
@@ -382,7 +381,7 @@ export default function ServicePage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChangeField("name", e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full max-w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 />
               </div>
 
@@ -396,7 +395,7 @@ export default function ServicePage() {
                   onChange={(e) =>
                     handleChangeField("shortDescription", e.target.value)
                   }
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full max-w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 />
               </div>
 
@@ -410,7 +409,7 @@ export default function ServicePage() {
                     handleChangeField("description", e.target.value)
                   }
                   rows={4}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full max-w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                 />
               </div>
 
@@ -426,7 +425,7 @@ export default function ServicePage() {
                     onChange={(e) =>
                       handleChangeField("durationMinutes", e.target.value)
                     }
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full max-w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   />
                 </div>
 
@@ -440,12 +439,12 @@ export default function ServicePage() {
                     onChange={(e) =>
                       handleChangeField("priceEuros", e.target.value)
                     }
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full max-w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleCancelEdit}
@@ -458,7 +457,9 @@ export default function ServicePage() {
                   disabled={saving}
                   className="rounded-full bg-black px-5 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
                 >
-                  {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+                  {saving
+                    ? "Enregistrement..."
+                    : "Enregistrer les modifications"}
                 </button>
               </div>
             </form>
