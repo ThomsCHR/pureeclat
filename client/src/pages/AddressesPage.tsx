@@ -200,9 +200,7 @@ export default function AddressesPage() {
               </div>
 
               <p className="mt-3 text-[11px] text-slate-500">
-                La carte ci-dessus est un visuel fictif. Dans la version finale,
-                tu peux intégrer un véritable iframe Google Maps avec
-                l&apos;adresse de ton institut.
+                La carte ci-dessus est un visuel fictif.
               </p>
             </div>
           </section>
