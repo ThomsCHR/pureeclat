@@ -198,7 +198,10 @@ export default function Home() {
 
             {/* Bloc droite : bouton + réseaux */}
             <div className="flex flex-col items-start gap-4 md:items-end">
-              <button className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-slate-900 shadow-sm hover:border-slate-300">
+              <button
+                onClick={() => navigate("/adresses")}
+                className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-slate-900 shadow-sm hover:border-slate-300"
+              >
                 Voir toutes nos adresses
               </button>
 
