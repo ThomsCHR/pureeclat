@@ -17,9 +17,9 @@ export default function Home() {
         </div>
 
         {/* Version mobile : image en fond léger */}
-        <div className="pointer-events-none absolute inset-0 md:hidden opacity-40">
+        <div className="pointer-events-none absolute inset-0 md:hidden ">
           <img
-            src="https://fme.international/wp-content/uploads/2025/07/France-medecine-esthetique-07-2025-1920.webp"
+            src="../images/home.png"
             alt="Visuel esthétique"
             className="h-full w-full object-cover object-center"
           />

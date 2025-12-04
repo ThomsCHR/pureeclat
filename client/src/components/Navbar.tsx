@@ -15,8 +15,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [openSolutions, setOpenSolutions] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ✅ on utilise ton hook d'auth
   const { isAuthenticated } = useAuth();
 
   const handleLogoClick = () => {
@@ -29,16 +29,33 @@ export default function Navbar() {
 
   const handleServiceClick = (slug: string) => {
     setOpenSolutions(false);
+    setMobileOpen(false);
     navigate(`/soins/${slug}`);
   };
 
   const handleAuthClick = () => {
+    setMobileOpen(false);
     if (isAuthenticated) {
-      // 🔹 Quand connecté → aller vers le profil
       navigate("/profil");
     } else {
-      // 🔹 Quand pas connecté → aller vers la page de connexion
       navigate("/connexion");
+    }
+  };
+
+  const handleSectionClick = (id: string) => {
+    setMobileOpen(false);
+
+    if (id === "pricing") {
+      navigate("/tarifs");
+      return;
+    }
+
+    // scroll vers la section de la home
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      navigate("/"); // fallback : on revient à l’accueil
     }
   };
 
@@ -56,7 +73,7 @@ export default function Navbar() {
             />
           </div>
 
-          {/* Links */}
+          {/* Links desktop */}
           <div className="hidden items-center gap-6 text-sm font-medium text-white md:flex relative">
             {/* Solutions */}
             <div
@@ -228,19 +245,7 @@ export default function Navbar() {
               .map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => {
-                    if (s.id === "pricing") {
-                      // 👉 Redirection vers la page tarifs
-                      navigate("/tarifs");
-                    } else {
-                      // 👉 Scroll vers la section sur la home
-                      const el = document.getElementById(s.id);
-                      el?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                      });
-                    }
-                  }}
+                  onClick={() => handleSectionClick(s.id)}
                   className="transition hover:text-rose-300"
                 >
                   {s.label}
@@ -248,15 +253,15 @@ export default function Navbar() {
               ))}
           </div>
 
-          {/* CTA + Connexion */}
+          {/* CTA + Connexion desktop */}
           <div className="hidden items-center gap-3 md:flex">
-            
             <button
-            onClick={() => navigate("/soins")}
-            className="rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
-          >
-            Prendre RDV
-          </button>
+              onClick={() => navigate("/soins")}
+              className="rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+            >
+              Prendre RDV
+            </button>
+
             {/* Icône de compte */}
             <button
               onClick={handleAuthClick}
@@ -267,7 +272,6 @@ export default function Navbar() {
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-4 h-4"
                 viewBox="0 0 20 20"
-                // 🟢 Icône verte si connecté
                 fill={isAuthenticated ? "#22c55e" : "currentColor"}
               >
                 <path
@@ -279,14 +283,60 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile menu */}
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur border border-white/30 md:hidden">
+          {/* Bouton menu mobile */}
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur border border-white/30 md:hidden"
+            onClick={() => setMobileOpen((prev) => !prev)}
+          >
             <div className="space-y-1">
               <span className="block h-0.5 w-4 bg-white" />
               <span className="block h-0.5 w-4 bg-white" />
             </div>
           </button>
         </nav>
+
+        {/* Menu mobile déroulant */}
+        {mobileOpen && (
+          <div className="md:hidden bg-black/95 text-white border-t border-white/10">
+            <div className="mx-auto max-w-6xl px-4 py-4 space-y-3 text-sm">
+              
+              {/* Autres liens */}
+              <div className="pt-2 border-t border-white/10 space-y-2">
+                {sections
+                  .filter((s) => s.id !== "solutions")
+                  .map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => handleSectionClick(s.id)}
+                      className="block w-full text-left text-sm text-white/90 hover:text-rose-300"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+              </div>
+
+              {/* CTA + compte */}
+              <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    navigate("/soins");
+                  }}
+                  className="w-full rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+                >
+                  Prendre RDV
+                </button>
+
+                <button
+                  onClick={handleAuthClick}
+                  className="w-full rounded-full bg-white text-xs font-semibold text-black py-2 flex items-center justify-center gap-2"
+                >
+                  {isAuthenticated ? "Mon profil" : "Se connecter"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {loading && <MiniLoader />}
