@@ -179,7 +179,7 @@ export function apiCancelAppointment(id: number) {
     }
   );
 }
-export type UserRoleApi = "CLIENT" | "ADMIN" | "ESTHETICIENNE";
+export type UserRoleApi = "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN";
 export type AdminUserApi = {
   id: number;
   firstName: string;

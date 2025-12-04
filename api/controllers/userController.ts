@@ -1,8 +1,14 @@
 // controllers/userController.ts
 import type { Request, Response } from "express";
 import { prisma } from "../src/prisma";
+import type { AuthRequest } from "../middleware/authMiddleware";
 
+// Pour le body de mise à jour de rôle
+type RolePayload = "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN";
+
+// ---------------------------------------------
 // GET /api/users
+// ---------------------------------------------
 export async function getAllUsers(req: Request, res: Response) {
   try {
     const users = await prisma.user.findMany({
@@ -104,13 +110,13 @@ export async function getUserAppointments(req: Request, res: Response) {
   }
 }
 
-// MODIFY
-export async function updateUserRole(req: Request, res: Response) {
+// ---------------------------------------------
+// PATCH /api/users/:id — modifier le rôle
+// ---------------------------------------------
+export async function updateUserRole(req: AuthRequest, res: Response) {
   try {
     const id = Number(req.params.id);
-    const { role } = req.body as {
-      role?: "CLIENT" | "ADMIN" | "ESTHETICIENNE";
-    };
+    const { role } = req.body as { role?: RolePayload };
 
     if (Number.isNaN(id)) {
       return res.status(400).json({ message: "ID utilisateur invalide." });
@@ -120,33 +126,44 @@ export async function updateUserRole(req: Request, res: Response) {
       return res.status(400).json({ message: "Rôle manquant." });
     }
 
-    if (!["CLIENT", "ADMIN", "ESTHETICIENNE"].includes(role)) {
-      return res.status(400).json({ message: "Rôle invalide." });
-    }
-
-    // 🔎 Récupérer l’utilisateur ciblé
-    const targetUser = await prisma.user.findUnique({
-      where: { id },
-      select: { id: true, role: true, isAdmin: true },
-    });
+    const targetUser = await prisma.user.findUnique({ where: { id } });
 
     if (!targetUser) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // 🚫 Interdiction : on ne modifie jamais le rôle d’un admin
-    if (targetUser.role === "ADMIN" || targetUser.isAdmin) {
+    // --- 🔒 RÈGLES DE SÉCURITÉ ---
+
+    // 1️⃣ Un ADMIN ne peut PAS modifier un ADMIN
+    if (req.user?.role === "ADMIN" && targetUser.role === "ADMIN") {
       return res.status(403).json({
-        message: "Impossible de modifier le rôle d’un administrateur.",
+        message: "Vous ne pouvez pas modifier un autre administrateur.",
       });
     }
 
-    // ✅ Mise à jour
-    const user = await prisma.user.update({
+    // 2️⃣ Un ADMIN ne peut PAS modifier un SUPERADMIN
+    if (req.user?.role === "ADMIN" && targetUser.role === "SUPERADMIN") {
+      return res.status(403).json({
+        message: "Vous ne pouvez pas modifier un SUPERADMIN.",
+      });
+    }
+
+    // 3️⃣ Seul SUPERADMIN peut promouvoir/déclasser un ADMIN
+    const isChangingAdminState =
+      targetUser.role === "ADMIN" || role === "ADMIN";
+
+    if (isChangingAdminState && req.user?.role !== "SUPERADMIN") {
+      return res.status(403).json({
+        message: "Seul le SUPERADMIN peut gérer les administrateurs.",
+      });
+    }
+
+    // --- Mise à jour autorisée ---
+    const updated = await prisma.user.update({
       where: { id },
       data: {
         role,
-        isAdmin: role === "ADMIN",
+        isAdmin: role === "ADMIN" || role === "SUPERADMIN",
       },
       select: {
         id: true,
@@ -160,18 +177,17 @@ export async function updateUserRole(req: Request, res: Response) {
       },
     });
 
-    return res.json({ user });
+    return res.json({ user: updated });
   } catch (error) {
     console.error("Error in updateUserRole:", error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors de la mise à jour de l'utilisateur." });
+    return res.status(500).json({ message: "Erreur serveur." });
   }
 }
 
-
-// DELETE
-export async function deleteUser(req: Request, res: Response) {
+// ---------------------------------------------
+// DELETE /api/users/:id — supprimer un utilisateur (non admin)
+// ---------------------------------------------
+export async function deleteUser(req: AuthRequest, res: Response) {
   try {
     const id = Number(req.params.id);
 
@@ -179,8 +195,7 @@ export async function deleteUser(req: Request, res: Response) {
       return res.status(400).json({ message: "ID utilisateur invalide." });
     }
 
-    // optionnel : empêcher un admin de se supprimer lui-même
-    const authUserId = (req as any).user?.id as number | undefined;
+    const authUserId = req.user?.id;
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -195,21 +210,21 @@ export async function deleteUser(req: Request, res: Response) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // 🔒 sécurité : on ne supprime pas les admins
-    if (user.role === "ADMIN" || user.isAdmin) {
-      return res
-        .status(400)
-        .json({ message: "Impossible de supprimer un compte administrateur." });
+    // 🔒 sécurité : on ne supprime pas les admins (ADMIN ou SUPERADMIN)
+    if (user.role === "ADMIN" || user.role === "SUPERADMIN" || user.isAdmin) {
+      return res.status(400).json({
+        message: "Impossible de supprimer un compte administrateur.",
+      });
     }
 
     // 🔒 option : ne pas permettre de se supprimer soi-même
     if (authUserId && authUserId === user.id) {
-      return res
-        .status(400)
-        .json({ message: "Vous ne pouvez pas supprimer votre propre compte." });
+      return res.status(400).json({
+        message: "Vous ne pouvez pas supprimer votre propre compte.",
+      });
     }
 
-    // grâce aux onDelete: Cascade, ça virera aussi ses RDV + tokens
+    // grâce aux onDelete: Cascade, ça supprime aussi ses RDV + tokens
     await prisma.user.delete({
       where: { id: user.id },
     });

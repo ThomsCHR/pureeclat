@@ -312,7 +312,7 @@ async function main() {
   console.log("👤 Users créés avec Argon2 : admin & client");
 
     // --- ESTHETIENNES ---
-  const practitionerPasswordHash = await argon2.hash("esth1234");
+  const practitionerPasswordHash = await argon2.hash("esth123456789-!xxx!z590b3z");
 
   await prisma.user.upsert({
     where: { email: "camille@pureeclat.com" },
@@ -358,6 +358,20 @@ async function main() {
     },
   });
 
+    await prisma.user.upsert({
+    where: { email: "dev@dev.com" },
+    update: {},
+    create: {
+      firstName: "Dev",
+      lastName: "Dev",
+      email: "dev@dev.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.SUPERADMIN,
+      phone: "0622222238",
+      isActive: true,
+      isAdmin: true,
+    },
+  });
   console.log("👤 Users créés avec Argon2 : admin, client & esthéticiennes");
 
 

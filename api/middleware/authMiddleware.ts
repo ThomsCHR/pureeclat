@@ -4,14 +4,16 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
 // mêmes valeurs que ton enum Prisma UserRole
-export type UserRole = "CLIENT" | "ADMIN" | "ESTHETICIENNE";
+export type UserRole = "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN";
 
 export interface AuthUser {
   id: number;
   role: UserRole;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
+// Requête enrichie avec le user
 export interface AuthRequest extends Request {
   user?: AuthUser;
 }
@@ -41,7 +43,12 @@ export function authMiddleware(
     req.user = {
       id: decoded.userId,
       role: decoded.role,
-      isAdmin: !!decoded.isAdmin, // on force en booléen
+      // est admin si role ADMIN / SUPERADMIN ou flag isAdmin = true
+      isAdmin:
+        decoded.role === "ADMIN" ||
+        decoded.role === "SUPERADMIN" ||
+        !!decoded.isAdmin,
+        isSuperAdmin: decoded.role === "SUPERADMIN",
     };
 
     return next();
@@ -58,11 +65,31 @@ export function requireAdmin(
   res: Response,
   next: NextFunction
 ) {
-  if (!req.user || !(req.user.isAdmin || req.user.role === "ADMIN")) {
+  if (
+    !req.user ||
+    !(
+      req.user.isAdmin ||
+      req.user.role === "ADMIN" ||
+      req.user.role === "SUPERADMIN"
+    )
+  ) {
     return res
       .status(403)
       .json({ message: "Accès réservé à l'administrateur." });
   }
 
+  return next();
+}
+
+export function requireSuperAdmin(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user || req.user.role !== "SUPERADMIN") {
+    return res
+      .status(403)
+      .json({ message: "Accès réservé au SUPERADMIN." });
+  }
   return next();
 }

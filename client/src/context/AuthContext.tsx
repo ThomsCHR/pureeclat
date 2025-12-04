@@ -11,14 +11,18 @@ export type AuthUser = {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
-  isAdmin?: boolean;
+  role: string;          // "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN"
+  isAdmin?: boolean;     // dépend du token backend
 };
 
 type AuthContextType = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  isAdmin?: boolean;
+
+  // Nouveaux flags mieux définis
+  isAdmin: boolean;       // ADMIN + SUPERADMIN
+  isSuperAdmin: boolean;  // SUPERADMIN uniquement
+
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
 };
@@ -55,10 +59,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   };
 
+  // 🔥 Backend envoie isAdmin = true si ADMIN ou SUPERADMIN
   const isAdmin = !!user?.isAdmin;
 
+  // 🔥 SUPERADMIN strict
+  const isSuperAdmin = user?.role === "SUPERADMIN";
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated,isAdmin, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isAdmin,
+        isSuperAdmin,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

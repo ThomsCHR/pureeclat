@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAllUsers, getUserAppointments, updateUserRole, deleteUser } from "../controllers/userController";
-import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
+import { authMiddleware, requireAdmin, requireSuperAdmin } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -12,6 +12,6 @@ router.get("/:id/appointments", authMiddleware, requireAdmin, getUserAppointment
 
 router.patch("/:id", authMiddleware, requireAdmin, updateUserRole);
 
-router.delete("/:id", authMiddleware, requireAdmin, deleteUser);
+router.delete("/:id", authMiddleware, requireSuperAdmin, deleteUser);
 
 export default router;

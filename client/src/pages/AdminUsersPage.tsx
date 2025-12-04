@@ -10,7 +10,7 @@ import {
 } from "../api/apiClient";
 
 export default function AdminUsersPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin, user: authUser } = useAuth();
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<AdminUserApi[]>([]);
@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
     );
   });
 
-  // 🔧 Changement de rôle (CLIENT / ADMIN / ESTHETICIENNE)
+  // 🔧 Changement de rôle (CLIENT / ADMIN / ESTHETICIENNE / SUPERADMIN)
   const handleChangeRole = async (userId: number, newRole: UserRoleApi) => {
     try {
       setSavingId(userId);
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  // 🗑️ Suppression d’un utilisateur (non admin)
+  // 🗑️ Suppression d’un utilisateur (non admin / non superadmin)
   const handleDeleteUser = async (user: AdminUserApi) => {
     if (
       !window.confirm(
@@ -99,6 +99,36 @@ export default function AdminUsersPage() {
       console.error(err);
       alert("Impossible de supprimer cet utilisateur.");
     }
+  };
+
+  // helper pour savoir si on peut éditer le rôle de cet utilisateur
+  const canEditRole = (u: AdminUserApi) => {
+    // Déjà en cours d'enregistrement
+    if (savingId === u.id) return false;
+
+    // On évite de se changer soi-même (optionnel mais plus safe)
+    if (authUser && authUser.id === u.id) return false;
+
+    // Un non-SUPERADMIN ne touche jamais aux admins ni superadmins
+    if (!isSuperAdmin && (u.role === "ADMIN" || u.role === "SUPERADMIN")) {
+      return false;
+    }
+
+    // Même un SUPERADMIN ne modifie pas un SUPERADMIN (autre ou lui-même)
+    if (u.role === "SUPERADMIN") return false;
+
+    return true;
+  };
+
+  // helper pour savoir si on peut supprimer cet utilisateur
+  const canDeleteUser = (u: AdminUserApi) => {
+    // On ne supprime jamais ADMIN ni SUPERADMIN
+    if (u.role === "ADMIN" || u.role === "SUPERADMIN") return false;
+
+    // Optionnel : ne pas se supprimer soi-même
+    if (authUser && authUser.id === u.id) return false;
+
+    return true;
   };
 
   return (
@@ -160,8 +190,8 @@ export default function AdminUsersPage() {
                     </p>
                   </button>
 
-                  {/* Bouton supprimer (si pas admin) */}
-                  {u.role !== "ADMIN" && (
+                  {/* Bouton supprimer (si autorisé) */}
+                  {canDeleteUser(u) && (
                     <div className="mt-2 flex justify-end">
                       <button
                         type="button"
@@ -189,55 +219,63 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id} className="border-b">
-                      <td className="px-4 py-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(`/admin/users/${u.id}/appointments`)
-                          }
-                          className="text-sm font-medium text-slate-900 hover:underline hover:text-slate-700"
-                        >
-                          {u.firstName} {u.lastName}
-                        </button>
-                      </td>
-                      <td className="px-4 py-2">{u.email}</td>
-                      <td className="px-4 py-2">{u.phone ?? "-"}</td>
-                      <td className="px-4 py-2">
-                        <select
-                          value={u.role}
-                          onChange={(e) =>
-                            handleChangeRole(
-                              u.id,
-                              e.target.value as UserRoleApi
-                            )
-                          }
-                          className="rounded-full border border-slate-300 bg-white px-2 py-1 text-xs"
-                          disabled={savingId === u.id || u.role === "ADMIN"} // 👈 AJOUT ICI
-                        >
-                          <option value="CLIENT">Client</option>
-                          <option value="ESTHETICIENNE">Esthéticienne</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {u.role !== "ADMIN" ? (
+                  {filteredUsers.map((u) => {
+                    const editable = canEditRole(u);
+                    const deletable = canDeleteUser(u);
+
+                    return (
+                      <tr key={u.id} className="border-b">
+                        <td className="px-4 py-2">
                           <button
                             type="button"
-                            onClick={() => handleDeleteUser(u)}
-                            className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                            onClick={() =>
+                              navigate(`/admin/users/${u.id}/appointments`)
+                            }
+                            className="text-sm font-medium text-slate-900 hover:underline hover:text-slate-700"
                           >
-                            Supprimer
+                            {u.firstName} {u.lastName}
                           </button>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">
-                            Admin
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-2">{u.email}</td>
+                        <td className="px-4 py-2">{u.phone ?? "-"}</td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={u.role}
+                            onChange={(e) =>
+                              handleChangeRole(
+                                u.id,
+                                e.target.value as UserRoleApi
+                              )
+                            }
+                            className="rounded-full border border-slate-300 bg-white px-2 py-1 text-xs"
+                            disabled={!editable}
+                          >
+                            <option value="CLIENT">Client</option>
+                            <option value="ESTHETICIENNE">
+                              Esthéticienne
+                            </option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="SUPERADMIN">Superadmin</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          {deletable ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(u)}
+                              className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                            >
+                              Supprimer
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">
+                              {u.role === "SUPERADMIN" ? "Superadmin" : "Admin"}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
