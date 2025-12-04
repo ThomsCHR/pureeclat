@@ -98,11 +98,21 @@ model Appointment {
 
   // Client
   userId Int
-  user   User @relation("ClientAppointments", fields: [userId], references: [id])
+  user   User @relation(
+    "ClientAppointments",
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade      // 👈 si on supprime le user client, on supprime ce RDV
+  )
 
   // Praticienne
   practitionerId Int
-  practitioner   User @relation("PractitionerAppointments", fields: [practitionerId], references: [id])
+  practitioner   User @relation(
+    "PractitionerAppointments",
+    fields: [practitionerId],
+    references: [id],
+    onDelete: Cascade      // 👈 si on supprime la praticienne, on supprime ce RDV
+  )
 
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
@@ -119,7 +129,11 @@ model EmailVerificationToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade        // 👈 suppression des tokecdns si le user est supprimé
+  )
   expiresAt DateTime
   createdAt DateTime @default(now())
 }

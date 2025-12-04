@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   apiGetUsers,
   apiUpdateUserRole,
+  apiDeleteUser,
   type AdminUserApi,
   type UserRoleApi,
 } from "../api/apiClient";
@@ -81,6 +82,25 @@ export default function AdminUsersPage() {
     }
   };
 
+  // 🗑️ Suppression d’un utilisateur (non admin)
+  const handleDeleteUser = async (user: AdminUserApi) => {
+    if (
+      !window.confirm(
+        `Supprimer le compte de ${user.firstName} ${user.lastName} ?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await apiDeleteUser(user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (err) {
+      console.error(err);
+      alert("Impossible de supprimer cet utilisateur.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF5ED] px-4 py-20">
       <div className="mx-auto max-w-4xl bg-white/90 border border-[#ead8c7] shadow rounded-2xl p-6 space-y-6">
@@ -117,23 +137,42 @@ export default function AdminUsersPage() {
             {/* 🟢 Version mobile : cartes empilées */}
             <div className="space-y-3 md:hidden">
               {filteredUsers.map((u) => (
-                <button
+                <div
                   key={u.id}
-                  type="button"
-                  onClick={() => navigate(`/admin/users/${u.id}/appointments`)}
-                  className="w-full text-left rounded-2xl border border-[#ead8c7] bg-white px-4 py-3 shadow-sm active:scale-[0.99] transition"
+                  className="w-full rounded-2xl border border-[#ead8c7] bg-white px-4 py-3 shadow-sm"
                 >
-                  <p className="text-sm font-semibold text-slate-900">
-                    {u.firstName} {u.lastName}
-                  </p>
-                  <p className="text-xs text-slate-600 mt-1">{u.email}</p>
-                  <p className="text-xs text-slate-500">
-                    Tél : {u.phone ?? "-"}
-                  </p>
-                  <p className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-medium text-slate-700">
-                    Rôle : {u.role}
-                  </p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/admin/users/${u.id}/appointments`)
+                    }
+                    className="w-full text-left"
+                  >
+                    <p className="text-sm font-semibold text-slate-900">
+                      {u.firstName} {u.lastName}
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">{u.email}</p>
+                    <p className="text-xs text-slate-500">
+                      Tél : {u.phone ?? "-"}
+                    </p>
+                    <p className="mt-1 inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-medium text-slate-700">
+                      Rôle : {u.role}
+                    </p>
+                  </button>
+
+                  {/* Bouton supprimer (si pas admin) */}
+                  {u.role !== "ADMIN" && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(u)}
+                        className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -146,6 +185,7 @@ export default function AdminUsersPage() {
                     <th className="text-left px-4 py-2">Email</th>
                     <th className="text-left px-4 py-2">Téléphone</th>
                     <th className="text-left px-4 py-2">Rôle</th>
+                    <th className="text-right px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -174,12 +214,27 @@ export default function AdminUsersPage() {
                             )
                           }
                           className="rounded-full border border-slate-300 bg-white px-2 py-1 text-xs"
-                          disabled={savingId === u.id}
+                          disabled={savingId === u.id || u.role === "ADMIN"} // 👈 AJOUT ICI
                         >
                           <option value="CLIENT">Client</option>
                           <option value="ESTHETICIENNE">Esthéticienne</option>
                           <option value="ADMIN">Admin</option>
                         </select>
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {u.role !== "ADMIN" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                          >
+                            Supprimer
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">
+                            Admin
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

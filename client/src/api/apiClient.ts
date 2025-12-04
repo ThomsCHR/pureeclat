@@ -276,3 +276,10 @@ export function apiUpdateUserRole(id: number, role: UserRoleApi) {
     body: JSON.stringify({ role }),
   });
 }
+
+// Supprimer un utilisateur (admin)
+export function apiDeleteUser(id: number) {
+  return request<{ message: string }>(`/api/users/${id}`, {
+    method: "DELETE",
+  });
+}
