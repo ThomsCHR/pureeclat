@@ -230,18 +230,21 @@ export default function ServicePage() {
         <div className="grid gap-10 md:grid-cols-2 items-start">
           {/* Visuel principal */}
           <div className="space-y-4 order-1 md:order-1">
-            <div className="overflow-hidden rounded-3xl bg-white border border-slate-200 shadow-sm">
-              {service.imageUrl ? (
-                <img
-                  src={service.imageUrl}
-                  alt={service.name}
-                  className="w-full aspect-[4/3] md:aspect-[5/3] object-cover object-center"
-                />
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center text-xs text-slate-500">
-                  Visuel à venir
-                </div>
-              )}
+            {/* hero full-width sur mobile */}
+            <div className="-mx-4 sm:mx-0">
+              <div className="overflow-hidden rounded-none sm:rounded-3xl bg-white border border-slate-200 shadow-sm">
+                {service.imageUrl ? (
+                  <img
+                    src={service.imageUrl}
+                    alt={service.name}
+                    className="w-full aspect-[4/3] md:aspect-[5/3] object-cover object-center"
+                  />
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center text-xs text-slate-500">
+                    Visuel à venir
+                  </div>
+                )}
+              </div>
             </div>
 
             {service.imageUrl && (
@@ -345,9 +348,7 @@ export default function ServicePage() {
                       className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2"
                     >
                       <div className="space-y-1">
-                        <p className="font-medium text-slate-900">
-                          {opt.name}
-                        </p>
+                        <p className="font-medium text-slate-900">{opt.name}</p>
                         {opt.duration && (
                           <p className="text-xs text-slate-500">
                             {opt.duration} min
