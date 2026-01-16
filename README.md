@@ -49,7 +49,7 @@ Node.js
 
 Express
 
-Sequelize
+PRISMA
 
 MySQL
 
