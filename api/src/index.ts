@@ -43,8 +43,13 @@ app.get("/api/admin/secret", authMiddleware, requireAdmin, (_req, res) => {
 
 
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ok", db: "connected" });
+  } catch (e) {
+    res.status(503).json({ status: "error", db: "unreachable" });
+  }
 });
 
 // Keep-alive : ping la BDD toutes les 4 minutes pour éviter la mise en veille
