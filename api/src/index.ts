@@ -9,6 +9,7 @@ import appointmentRoutes from "../routers/appointmentRoutes";
 import availabilityRoutes from "../routers/availabilityRoutes";
 import categoryRoutes from "../routers/categoryRoutes";
 import userRoutes from "../routers/userRoutes";
+import { prisma } from "./prisma";
 
 
 
@@ -45,6 +46,16 @@ app.get("/api/admin/secret", authMiddleware, requireAdmin, (_req, res) => {
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+// Keep-alive : ping la BDD toutes les 4 minutes pour éviter la mise en veille
+setInterval(async () => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log("[keep-alive] DB ping OK");
+  } catch (e) {
+    console.error("[keep-alive] DB ping failed:", e);
+  }
+}, 4 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
