@@ -8,8 +8,7 @@
     "build": "npm run prisma:generate && tsc",
     "start": "node dist/src/index.js",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "prisma:generate": "prisma generate"
   },
   "type": "commonjs",
   "dependencies": {
