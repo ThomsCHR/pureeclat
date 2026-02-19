@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Empêche la navbar de se décaler quand la scrollbar apparaît/disparaît */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* === ANIMATIONS PERSONNALISÉES === */
 
 @keyframes fadeIn {

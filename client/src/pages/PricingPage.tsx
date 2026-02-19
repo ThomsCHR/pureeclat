@@ -172,20 +172,20 @@ export default function PricingPage() {
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-[#ead8c7] bg-white/90 shadow-sm">
-                    <table className="min-w-full text-sm">
+                    <table className="w-full table-fixed text-sm">
                       <thead className="bg-[#fdf4ec] text-xs uppercase tracking-[0.16em] text-slate-500">
                         <tr>
-                          <th className="px-4 py-3 text-left font-medium">
+                          <th className="w-1/2 px-4 py-3 text-left font-medium">
                             Soin
                           </th>
-                          <th className="px-4 py-3 text-left font-medium">
+                          <th className="w-28 px-4 py-3 text-left font-medium">
                             Durée
                           </th>
                           <th className="px-4 py-3 text-right font-medium">
                             Tarifs TTC
                           </th>
                           {isAdmin && (
-                            <th className="px-4 py-3 text-right font-medium">
+                            <th className="w-28 px-4 py-3 text-right font-medium">
                               Actions
                             </th>
                           )}

@@ -1,5 +1,6 @@
-import express from "express";
 import 'dotenv/config';
+import express from "express";
+
 import cors from "cors";
 import serviceRoutes from "../routers/serviceRoutes";
 import authRoutes from "../routers/authRoutes";
@@ -13,7 +14,12 @@ import userRoutes from "../routers/userRoutes";
 
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",");
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 const PORT = process.env.PORT || 3000;
 

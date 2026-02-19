@@ -36,6 +36,13 @@ export async function request<TResponse = unknown>(
     // pas de JSON, ce n'est pas grave
   }
 
+  if (res.status === 401) {
+    // Token expiré ou invalide → on déconnecte et on redirige
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
+    window.location.href = "/connexion";
+  }
+
   if (!res.ok) {
     throw new Error(getErrorMessageFromData(data, res.status));
   }

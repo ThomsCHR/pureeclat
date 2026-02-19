@@ -13,28 +13,28 @@ export default function ButtonExplore({
     <button
       type="button"
       onClick={onClick}
-      className="flex justify-center gap-2 items-center shadow-xl text-lg 
-                 bg-gray-50 backdrop-blur-md lg:font-semibold isolation-auto 
-                 border-gray-200 relative z-10 px-6 py-3 
+      className="flex justify-center gap-2 items-center shadow-xl text-lg
+                 bg-gray-50 backdrop-blur-md lg:font-semibold isolation-auto
+                 border-gray-200 relative z-10 px-6 py-3
                  overflow-hidden border-2 rounded-full group"
     >
       {/* slider dégradé */}
       <span
-        className="before:absolute before:w-full before:transition-all before:duration-700 
-                   before:hover:w-full before:-left-full before:hover:left-0 
-                   before:rounded-full 
+        className="before:absolute before:w-full before:transition-all before:duration-700
+                   before:hover:w-full before:-left-full before:hover:left-0
+                   before:rounded-full
                    before:bg-gradient-to-r before:from-red-500 before:via-purple-500 before:to-blue-500
-                   before:-z-10 before:aspect-square 
-                   before:hover:scale-150 before:hover:duration-700 
+                   before:-z-10 before:aspect-square
+                   before:hover:scale-150 before:hover:duration-700
                    absolute inset-0"
       />
 
       {children}
 
       <svg
-        className="w-6 h-6 justify-end 
-                   group-hover:rotate-90 ease-linear duration-300 
-                   rounded-full border border-gray-700 
+        className="w-6 h-6 justify-end
+                   group-hover:rotate-90 ease-linear duration-300
+                   rounded-full border border-gray-700
                    p-1 rotate-45 bg-gray-50"
         viewBox="0 0 16 19"
         xmlns="http://www.w3.org/2000/svg"

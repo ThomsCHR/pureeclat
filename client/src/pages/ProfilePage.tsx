@@ -211,21 +211,23 @@ export default function ProfilePage() {
             <p className="text-[0.65rem] text-white/50">
               *Selon nos conditions d&apos;annulation.
             </p>
-            {user?.isAdmin && (
+            <div className="flex flex-col gap-3 pt-4">
+              {user?.isAdmin && (
+                <button
+                  onClick={() => navigate("/admin/users")}
+                  className="inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white hover:bg-white/20 transition"
+                >
+                  Gérer les utilisateurs
+                </button>
+              )}
+
               <button
-                onClick={() => navigate("/admin/users")}
+                onClick={handleLogout}
                 className="inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white hover:bg-white/20 transition"
               >
-                Gérer les utilisateurs
+                Se déconnecter
               </button>
-            )}
-
-            <button
-              onClick={handleLogout}
-              className="mt-4 inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white hover:bg-white/20 transition"
-            >
-              Se déconnecter
-            </button>
+            </div>
           </div>
         </div>
 

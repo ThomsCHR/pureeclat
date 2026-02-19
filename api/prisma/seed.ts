@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole } from "@prisma/client";
 import argon2 from "argon2";
+import "dotenv/config";
 const prisma = new PrismaClient();
 
 async function main() {
@@ -358,20 +359,29 @@ async function main() {
     },
   });
 
+  const superAdminEmail = process.env.SUPERADMIN_EMAIL;
+  const superAdminPassword = process.env.SUPERADMIN_PASSWORD;
+
+  if (!superAdminEmail || !superAdminPassword) {
+    console.warn("⚠️  SUPERADMIN_EMAIL ou SUPERADMIN_PASSWORD manquant dans le .env — SUPERADMIN non créé.");
+  } else {
+    const superAdminHash = await argon2.hash(superAdminPassword);
     await prisma.user.upsert({
-    where: { email: "dev@dev.com" },
-    update: {},
-    create: {
-      firstName: "Dev",
-      lastName: "Dev",
-      email: "dev@dev.com",
-      passwordHash: practitionerPasswordHash,
-      role: UserRole.SUPERADMIN,
-      phone: "0622222238",
-      isActive: true,
-      isAdmin: true,
-    },
-  });
+      where: { email: superAdminEmail },
+      update: {},
+      create: {
+        firstName: "Super",
+        lastName: "Admin",
+        email: superAdminEmail,
+        passwordHash: superAdminHash,
+        role: UserRole.SUPERADMIN,
+        phone: "0622222238",
+        isActive: true,
+        isAdmin: true,
+      },
+    });
+    console.log(`👤 SUPERADMIN créé : ${superAdminEmail}`);
+  }
   console.log("👤 Users créés avec Argon2 : admin, client & esthéticiennes");
 
 

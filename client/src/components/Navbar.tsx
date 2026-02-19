@@ -56,7 +56,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30 bg-black/70 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-30 bg-black/70">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2">
           {/* Logo */}
           <div className="flex items-center">
@@ -76,14 +76,17 @@ export default function Navbar() {
               onMouseEnter={() => setOpenSolutions(true)}
               onMouseLeave={() => setOpenSolutions(false)}
             >
-              <button className="transition hover:text-rose-300">
+              <button
+                onClick={() => { setOpenSolutions(false); navigate("/soins"); }}
+                className="transition hover:text-rose-300"
+              >
                 Rituels
               </button>
 
               {/* Mega Menu */}
               <div
-                className={`absolute left-1/2 top-full z-40 w-[750px] 
-                  -translate-x-1/2 rounded-2xl bg-black p-8 text-white 
+                className={`absolute left-1/2 top-full z-40 w-[750px]
+                  -translate-x-1/2 rounded-2xl bg-black p-8 text-white
                   shadow-xl border border-white/10
                   ${openSolutions ? "block" : "hidden"}`}
               >
