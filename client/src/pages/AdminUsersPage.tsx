@@ -190,9 +190,22 @@ export default function AdminUsersPage() {
                     </p>
                   </button>
 
-                  {/* Bouton supprimer (si autorisé) */}
-                  {canDeleteUser(u) && (
-                    <div className="mt-2 flex justify-end">
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <select
+                      value={u.role}
+                      onChange={(e) =>
+                        handleChangeRole(u.id, e.target.value as UserRoleApi)
+                      }
+                      disabled={!canEditRole(u)}
+                      className="rounded-full border border-slate-300 bg-white px-2 py-1 text-xs disabled:opacity-50"
+                    >
+                      <option value="CLIENT">Client</option>
+                      <option value="ESTHETICIENNE">Esthéticienne</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="SUPERADMIN">Superadmin</option>
+                    </select>
+
+                    {canDeleteUser(u) && (
                       <button
                         type="button"
                         onClick={() => handleDeleteUser(u)}
@@ -200,8 +213,8 @@ export default function AdminUsersPage() {
                       >
                         Supprimer
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -163,16 +163,57 @@ export default function PricingPage() {
                         }
                         className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[0.75rem] font-medium text-emerald-800 hover:bg-emerald-100 transition"
                       >
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px]">
-                          +
-                        </span>
                         Ajouter un soin
                       </button>
                     )}
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-[#ead8c7] bg-white/90 shadow-sm">
-                    <table className="w-full table-fixed text-sm">
+
+                    {/* Mobile */}
+                    <div className="sm:hidden divide-y divide-[#ead8c7]">
+                      <div className="flex justify-between px-4 py-2 bg-[#fdf4ec] text-xs uppercase tracking-[0.16em] text-slate-500 font-medium">
+                        <span>Soin</span>
+                        <span>Tarifs TTC</span>
+                      </div>
+                      {items.map((service, index) => (
+                        <div
+                          key={service.id ?? service.slug}
+                          className={`flex items-center justify-between gap-3 px-4 py-3 ${index % 2 === 0 ? "" : "bg-[#fff7f0]"}`}
+                        >
+                          <div className="min-w-0">
+                            <button
+                              onClick={() => navigate(`/soins/${service.slug}`)}
+                              className="font-medium text-slate-900 hover:underline hover:text-slate-700 transition text-left"
+                            >
+                              {service.name}
+                            </button>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {formatDuration(service.durationMinutes)}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className="font-semibold text-slate-900 text-sm whitespace-nowrap">
+                              {formatPrice(service.priceCents)}
+                            </span>
+                            {isAdmin && (
+                              <div className="mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteService(service.id)}
+                                  className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[0.65rem] font-medium text-rose-700 hover:bg-rose-100 transition"
+                                >
+                                  Supprimer
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop */}
+                    <table className="hidden sm:table w-full table-fixed text-sm">
                       <thead className="bg-[#fdf4ec] text-xs uppercase tracking-[0.16em] text-slate-500">
                         <tr>
                           <th className="w-1/2 px-4 py-3 text-left font-medium">
@@ -195,15 +236,11 @@ export default function PricingPage() {
                         {items.map((service, index) => (
                           <tr
                             key={service.id ?? service.slug}
-                            className={
-                              index % 2 === 0 ? "bg-white/0" : "bg-[#fff7f0]"
-                            }
+                            className={index % 2 === 0 ? "bg-white/0" : "bg-[#fff7f0]"}
                           >
                             <td className="px-4 py-3 align-top">
                               <button
-                                onClick={() =>
-                                  navigate(`/soins/${service.slug}`)
-                                }
+                                onClick={() => navigate(`/soins/${service.slug}`)}
                                 className="font-medium text-slate-900 hover:underline hover:text-slate-700 transition"
                               >
                                 {service.name}
@@ -215,14 +252,11 @@ export default function PricingPage() {
                             <td className="px-4 py-3 align-top text-right font-semibold text-slate-900">
                               {formatPrice(service.priceCents)}
                             </td>
-
                             {isAdmin && (
                               <td className="px-4 py-3 align-top text-right">
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    handleDeleteService(service.id)
-                                  }
+                                  onClick={() => handleDeleteService(service.id)}
                                   className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[0.7rem] font-medium text-rose-700 hover:bg-rose-100 transition"
                                 >
                                   Supprimer
