@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../src/prisma";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
@@ -8,20 +8,15 @@ import { Resend } from "resend";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const JWT_EXPIRES_IN = "1h";
 
-// 👇 ici on regarde vraiment ce qui est chargé
 console.log("RESEND_API_KEY loaded:", process.env.RESEND_API_KEY);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Génération du JWT
 function createToken(payload: { userId: number; role: string; isAdmin?: boolean }) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-// ---------------------------------------------
-// POST /api/auth/register
-// ---------------------------------------------
-export async function register(req: Request, res: Response) {
+export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const { firstName, lastName, email, phone, password } = req.body;
 
@@ -31,14 +26,12 @@ export async function register(req: Request, res: Response) {
       });
     }
 
-    // 🔍 Validation format email
     if (!validator.isEmail(email)) {
       return res.status(400).json({
         message: "Adresse e-mail invalide.",
       });
     }
 
-    // 🔍 Vérifie si un compte existe déjà
     const existing = await prisma.user.findUnique({
       where: { email },
     });
@@ -49,7 +42,6 @@ export async function register(req: Request, res: Response) {
       });
     }
 
-    // 🔐 Hash du mot de passe
     const passwordHash = await argon2.hash(password);
 
     const user = await prisma.user.create({
@@ -64,10 +56,9 @@ export async function register(req: Request, res: Response) {
       },
     });
 
-    // ✉️ Email de bienvenue (best effort, ne bloque pas la création du compte)
     try {
       const { data, error } = await resend.emails.send({
-        from: "PureÉclat <onboarding@resend.dev>", // domaine de test OK sans config
+        from: "PureÉclat <onboarding@resend.dev>",
         to: [user.email],
         subject: "Bienvenue chez PureÉclat",
         html: `
@@ -114,17 +105,11 @@ export async function register(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error("Error in register:", error);
-    return res.status(500).json({
-      message: "Une erreur est survenue lors de la création du compte.",
-    });
+    return next(error);
   }
 }
 
-// ---------------------------------------------
-// POST /api/auth/login
-// ---------------------------------------------
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body;
 
@@ -169,9 +154,6 @@ export async function login(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    console.error("Error in login:", error);
-    return res
-      .status(500)
-      .json({ message: "Une erreur est survenue lors de la connexion." });
+    return next(error);
   }
 }

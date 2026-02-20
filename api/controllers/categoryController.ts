@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../src/prisma";
 
 
-export const getAllCategories = async (req: Request, res: Response) => {
+export const getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
@@ -14,9 +14,8 @@ export const getAllCategories = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({ categories }); // 👈 important
+    res.json({ categories });
   } catch (error) {
-    console.error("Erreur getAllCategories:", error);
-    res.status(500).json({ message: "Erreur serveur" }); // 👈 message pour coller au front
+    next(error);
   }
 };

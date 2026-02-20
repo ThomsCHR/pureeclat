@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { UserRole } from "@prisma/client"; // ✅ utilise l'enum Prisma
+import { UserRole } from "@prisma/client";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
@@ -11,7 +11,6 @@ export interface AuthUser {
   isSuperAdmin: boolean;
 }
 
-// Requête enrichie avec le user
 export interface AuthRequest extends Request {
   user?: AuthUser;
 }
@@ -34,7 +33,7 @@ export function authMiddleware(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: number;
-      role: UserRole; // ✅ typé Prisma
+      role: UserRole;
       isAdmin?: boolean;
     };
 
@@ -43,13 +42,10 @@ export function authMiddleware(
     req.user = {
       id: decoded.userId,
       role,
-      // un admin = ADMIN ou SUPERADMIN ou un flag isAdmin reçu
       isAdmin:
         role === UserRole.ADMIN ||
         role === UserRole.SUPERADMIN ||
         !!decoded.isAdmin,
-
-      // superadmin uniquement si SUPERADMIN
       isSuperAdmin: role === UserRole.SUPERADMIN,
     };
 

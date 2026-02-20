@@ -1,9 +1,7 @@
-import { Request, Response} from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from "../src/prisma";
 
-// Récupérer tous les services
-
-export const getAllServices = async (req: Request, res: Response) => {
+export const getAllServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const services = await prisma.service.findMany({
       where: { isActive: true },
@@ -19,14 +17,11 @@ export const getAllServices = async (req: Request, res: Response) => {
 
     res.json(services);
   } catch (error) {
-    console.error("Erreur getAllServices:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 };
 
-// Récupérer un service par son slug
-
-export const getServiceBySlug = async (req: Request, res: Response) => {
+export const getServiceBySlug = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { slug } = req.params;
 
@@ -44,13 +39,11 @@ export const getServiceBySlug = async (req: Request, res: Response) => {
 
     res.json(service);
   } catch (error) {
-    console.error("Erreur getServiceBySlug:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    return next(error);
   }
 };
 
-// Création d'un nouveau soin (réservé admin)
-export const createService = async (req: Request, res: Response) => {
+export const createService = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       name,
@@ -72,14 +65,12 @@ export const createService = async (req: Request, res: Response) => {
       imageUrl?: string | null;
     };
 
-    // ⚠️ ICI on vérifie bien categoryId (PAS categorySlug)
     if (!name || !categoryId) {
       return res
         .status(400)
         .json({ message: "Le nom du soin et la catégorie sont obligatoires." });
     }
 
-    // Vérifier que la catégorie existe
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
     });
@@ -88,7 +79,6 @@ export const createService = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Catégorie introuvable." });
     }
 
-    // Slug de base : soit slug envoyé, soit généré à partir du nom
     const baseSlug =
       slug ||
       name
@@ -101,7 +91,6 @@ export const createService = async (req: Request, res: Response) => {
     let finalSlug = baseSlug || "soin";
     let i = 1;
 
-    // S'assurer que le slug est unique
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const existing = await prisma.service.findUnique({
@@ -111,7 +100,6 @@ export const createService = async (req: Request, res: Response) => {
       finalSlug = `${baseSlug}-${i++}`;
     }
 
-    // Positionner le soin à la fin de sa catégorie
     const maxOrder = await prisma.service.aggregate({
       where: { categoryId: category.id },
       _max: { orderInCategory: true },
@@ -139,13 +127,11 @@ export const createService = async (req: Request, res: Response) => {
 
     return res.status(201).json(newService);
   } catch (error) {
-    console.error("Erreur createService:", error);
-    return res.status(500).json({ message: "Erreur serveur" });
+    return next(error);
   }
 };
 
-// 🔥 Suppression DEFINITIVE d'un soin (admin uniquement)
-export const deleteService = async (req: Request, res: Response) => {
+export const deleteService = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
 
@@ -161,19 +147,15 @@ export const deleteService = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Soin introuvable." });
     }
 
-    // On fait tout dans une transaction
     await prisma.$transaction(async (tx) => {
-      // 1) supprimer tous les rendez-vous liés à ce soin
       await tx.appointment.deleteMany({
         where: { serviceId: id },
       });
 
-      // 2) supprimer toutes les options de ce soin
       await tx.serviceOption.deleteMany({
         where: { serviceId: id },
       });
 
-      // 3) supprimer le soin lui-même
       await tx.service.delete({
         where: { id },
       });
@@ -181,14 +163,11 @@ export const deleteService = async (req: Request, res: Response) => {
 
     return res.json({ message: "Soin supprimé avec succès." });
   } catch (error) {
-    console.error("Erreur deleteService:", error);
-    return res.status(500).json({ message: "Erreur serveur" });
+    return next(error);
   }
 };
 
-
-// 🔄 Mise à jour d'un soin (admin uniquement)
-export const updateService = async (req: Request, res: Response) => {
+export const updateService = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
 
@@ -228,7 +207,6 @@ export const updateService = async (req: Request, res: Response) => {
 
     const updateData: any = {};
 
-    // --- GESTION CATEGORIE ---
     let finalCategoryId = existing.categoryId;
 
     if (typeof categoryId === "number") {
@@ -244,11 +222,8 @@ export const updateService = async (req: Request, res: Response) => {
       updateData.categoryId = finalCategoryId;
     }
 
-    // --- GESTION SLUG ---
-    // 1) on part du slug actuel
     let finalSlug = existing.slug;
 
-    // Helper pour normaliser un slug
     const makeSlug = (raw: string) =>
       raw
         .normalize("NFD")
@@ -257,17 +232,14 @@ export const updateService = async (req: Request, res: Response) => {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
-    // 2) Priorité au slug envoyé dans le body, s'il est non vide
     if (typeof slug === "string" && slug.trim() !== "") {
       const baseSlug = makeSlug(slug);
       finalSlug = baseSlug || existing.slug;
     } else if (typeof name === "string" && name.trim() !== "") {
-      // 3) Si pas de slug envoyé mais le nom change : on peut regénérer le slug
       const baseSlug = makeSlug(name);
       finalSlug = baseSlug || existing.slug;
     }
 
-    // 4) Vérifier l'unicité du slug (hors soin actuel)
     if (finalSlug !== existing.slug) {
       let candidate = finalSlug;
       let i = 1;
@@ -279,7 +251,6 @@ export const updateService = async (req: Request, res: Response) => {
         });
 
         if (!conflict || conflict.id === existing.id) {
-          // soit pas de conflit, soit c'est ce même soin
           finalSlug = candidate;
           break;
         }
@@ -289,8 +260,6 @@ export const updateService = async (req: Request, res: Response) => {
 
       updateData.slug = finalSlug;
     }
-
-    // --- AUTRES CHAMPS SIMPLES ---
 
     if (typeof name === "string") {
       updateData.name = name;
@@ -320,7 +289,6 @@ export const updateService = async (req: Request, res: Response) => {
       updateData.isActive = isActive;
     }
 
-    // Si la catégorie change, on peut choisir de repositionner le soin
     if (updateData.categoryId && updateData.categoryId !== existing.categoryId) {
       const maxOrder = await prisma.service.aggregate({
         where: { categoryId: updateData.categoryId },
@@ -342,7 +310,6 @@ export const updateService = async (req: Request, res: Response) => {
 
     return res.json(updated);
   } catch (error) {
-    console.error("Erreur updateService:", error);
-    return res.status(500).json({ message: "Erreur serveur" });
+    return next(error);
   }
 };

@@ -9,6 +9,7 @@ import appointmentRoutes from "../routers/appointmentRoutes";
 import availabilityRoutes from "../routers/availabilityRoutes";
 import categoryRoutes from "../routers/categoryRoutes";
 import userRoutes from "../routers/userRoutes";
+import { errorHandler } from "../middleware/errorMiddleware";
 
 
 
@@ -44,6 +45,8 @@ app.get("/api/admin/secret", authMiddleware, requireAdmin, (_req, res) => {
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

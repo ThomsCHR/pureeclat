@@ -1,13 +1,9 @@
-// controllers/userController.ts
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../src/prisma";
 import type { AuthRequest } from "../middleware/authMiddleware";
 import { UserRole } from "@prisma/client";
 
-// ---------------------------------------------
-// GET /api/users
-// ---------------------------------------------
-export async function getAllUsers(req: Request, res: Response) {
+export async function getAllUsers(req: Request, res: Response, next: NextFunction) {
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -24,19 +20,11 @@ export async function getAllUsers(req: Request, res: Response) {
 
     return res.json({ users });
   } catch (error) {
-    console.error("Error in getAllUsers:", error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors du chargement des utilisateurs." });
+    return next(error);
   }
 }
 
-/**
- * GET /api/users/:id/appointments
- * Tous les RDV liés à un utilisateur (en tant que client & praticienne)
- * Admin uniquement
- */
-export async function getUserAppointments(req: Request, res: Response) {
+export async function getUserAppointments(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
 
@@ -59,7 +47,6 @@ export async function getUserAppointments(req: Request, res: Response) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // RDV où la personne est cliente
     const clientAppointmentsRaw = await prisma.appointment.findMany({
       where: { userId: id },
       orderBy: { startAt: "desc" },
@@ -69,13 +56,12 @@ export async function getUserAppointments(req: Request, res: Response) {
       },
     });
 
-    // RDV où la personne est praticienne
     const practitionerAppointmentsRaw = await prisma.appointment.findMany({
       where: { practitionerId: id },
       orderBy: { startAt: "desc" },
       include: {
         service: true,
-        user: true, // client
+        user: true,
       },
     });
 
@@ -101,17 +87,11 @@ export async function getUserAppointments(req: Request, res: Response) {
       practitionerAppointments,
     });
   } catch (error) {
-    console.error("Error in getUserAppointments:", error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors du chargement des rendez-vous." });
+    return next(error);
   }
 }
 
-// ---------------------------------------------
-// PATCH /api/users/:id — modifier le rôle
-// ---------------------------------------------
-export async function updateUserRole(req: AuthRequest, res: Response) {
+export async function updateUserRole(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
     const { role } = req.body as { role?: UserRole };
@@ -124,7 +104,6 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: "Rôle manquant." });
     }
 
-    // sécurité typée : vérifier que le rôle est bien dans l'enum Prisma
     if (!Object.values(UserRole).includes(role)) {
       return res.status(400).json({ message: "Rôle invalide." });
     }
@@ -135,16 +114,12 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // --- 🔒 RÈGLES DE SÉCURITÉ ---
-
-    // 1️⃣ Un ADMIN ne peut PAS modifier un ADMIN
     if (req.user?.role === UserRole.ADMIN && targetUser.role === UserRole.ADMIN) {
       return res.status(403).json({
         message: "Vous ne pouvez pas modifier un autre administrateur.",
       });
     }
 
-    // 2️⃣ Un ADMIN ne peut PAS modifier un SUPERADMIN
     if (
       req.user?.role === UserRole.ADMIN &&
       targetUser.role === UserRole.SUPERADMIN
@@ -154,7 +129,6 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
       });
     }
 
-    // 3️⃣ Seul SUPERADMIN peut promouvoir/déclasser un ADMIN
     const isChangingAdminState =
       targetUser.role === UserRole.ADMIN || role === UserRole.ADMIN;
 
@@ -164,7 +138,6 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
       });
     }
 
-    // --- Mise à jour autorisée ---
     const updated = await prisma.user.update({
       where: { id },
       data: {
@@ -185,15 +158,11 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
 
     return res.json({ user: updated });
   } catch (error) {
-    console.error("Error in updateUserRole:", error);
-    return res.status(500).json({ message: "Erreur serveur." });
+    return next(error);
   }
 }
 
-// ---------------------------------------------
-// DELETE /api/users/:id — supprimer un utilisateur (non admin)
-// ---------------------------------------------
-export async function deleteUser(req: AuthRequest, res: Response) {
+export async function deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
 
@@ -216,7 +185,6 @@ export async function deleteUser(req: AuthRequest, res: Response) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // 🔒 sécurité : on ne supprime pas les admins (ADMIN ou SUPERADMIN)
     if (
       user.role === UserRole.ADMIN ||
       user.role === UserRole.SUPERADMIN ||
@@ -227,23 +195,18 @@ export async function deleteUser(req: AuthRequest, res: Response) {
       });
     }
 
-    // 🔒 option : ne pas permettre de se supprimer soi-même
     if (authUserId && authUserId === user.id) {
       return res.status(400).json({
         message: "Vous ne pouvez pas supprimer votre propre compte.",
       });
     }
 
-    // grâce aux onDelete: Cascade, ça supprime aussi ses RDV + tokens
     await prisma.user.delete({
       where: { id: user.id },
     });
 
     return res.json({ message: "Utilisateur supprimé avec succès." });
   } catch (error) {
-    console.error("Error in deleteUser:", error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors de la suppression de l'utilisateur." });
+    return next(error);
   }
 }

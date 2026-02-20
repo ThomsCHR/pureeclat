@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
 import {
   PrismaClient,
   AppointmentStatus,
@@ -12,18 +12,13 @@ import type { AuthRequest } from "../middleware/authMiddleware";
 
 const prisma = new PrismaClient();
 
-// Type d'un rendez-vous avec ses relations incluses
 type AppointmentWithRelations = Appointment & {
   service: Service;
   serviceOption: ServiceOption | null;
   practitioner: User;
 };
 
-/**
- * GET /api/appointments/me
- * Retourne les rendez-vous de l'utilisateur connecté (client)
- */
-export const getMyAppointments = async (req: AuthRequest, res: Response) => {
+export const getMyAppointments = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non authentifié." });
@@ -70,14 +65,11 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
 
     return res.json({ appointments: mapped });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors de la récupération des rendez-vous." });
+    return next(error);
   }
 };
 
-export const cancelAppointment = async (req: AuthRequest, res: Response) => {
+export const cancelAppointment = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non authentifié." });
@@ -89,7 +81,6 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "ID de rendez-vous invalide." });
     }
 
-    // On récupère le RDV
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
     });
@@ -101,7 +92,6 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
     const isOwner = appointment.userId === req.user.id;
     const isAdmin = req.user.isAdmin === true;
 
-    // ❌ Si ni propriétaire ni admin → interdit
     if (!isOwner && !isAdmin) {
       return res.status(403).json({
         message: "Vous n'êtes pas autorisé à annuler ce rendez-vous.",
@@ -115,7 +105,6 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // On annule
     const updated = await prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: AppointmentStatus.CANCELLED },
@@ -128,18 +117,11 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
       appointment: updated,
     });
   } catch (error) {
-    console.error("cancelAppointment error:", error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors de l'annulation du rendez-vous." });
+    return next(error);
   }
 };
 
-/**
- * GET /api/availability?serviceId=1&date=2025-12-02
- * Renvoie les créneaux disponibles par esthéticienne pour un service et une date
- */
-export const getAvailability = async (req: AuthRequest, res: Response) => {
+export const getAvailability = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const serviceId = Number(req.query.serviceId);
     const dateStr = req.query.date as string | undefined;
@@ -237,19 +219,11 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
 
     return res.json({ practitioners: result });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors du calcul des disponibilités." });
+    return next(error);
   }
 };
 
-/**
- * POST /api/appointments
- * Body: { serviceId, practitionerId, startAt, serviceOptionId? }
- * Crée un rendez-vous pour l'utilisateur connecté
- */
-export const createAppointment = async (req: AuthRequest, res: Response) => {
+export const createAppointment = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non authentifié." });
@@ -351,15 +325,14 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
       appointment,
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Erreur lors de la création du rendez-vous." });
+    return next(error);
   }
 };
+
 export const getMyPractitionerAppointments = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     if (!req.user) {
@@ -380,7 +353,7 @@ export const getMyPractitionerAppointments = async (
       include: {
         service: true,
         serviceOption: true,
-        user: true, // client
+        user: true,
       },
       orderBy: { startAt: "asc" },
     });
@@ -409,10 +382,6 @@ export const getMyPractitionerAppointments = async (
 
     return res.json({ appointments: mapped });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message:
-        "Erreur lors de la récupération des rendez-vous de vos clientes.",
-    });
+    return next(error);
   }
 };
