@@ -330,8 +330,10 @@ export default function ServicePage() {
               onClick={() => navigate(`/reservation/${service.slug}`)}
             >
               <span>Prendre RDV</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-black">
-                →
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-black">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
               </span>
             </button>
 
