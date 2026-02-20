@@ -1,4 +1,4 @@
-Pure Éclat est une application web fullstack dédiée à la gestion d’un institut de beauté.
+Pure Éclat est une application web fullstack dédiée à la gestion d’un institut de beauté.(fictif)
 Elle permet aux clients de consulter les soins et de prendre rendez-vous en ligne, tout en offrant une interface d’administration complète pour la gestion de l’activité.
 
 ## ✨ Fonctionnalités principales
