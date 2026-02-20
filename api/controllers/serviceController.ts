@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from "../src/prisma";
+import { AppError } from "../middleware/errorMiddleware";
 
 export const getAllServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const services = await prisma.service.findMany({
       where: { isActive: true },
-      include: {
-        category: true,
-        options: true,
-      },
+      include: { category: true, options: true },
       orderBy: [
         { category: { order: "asc" } },
         { orderInCategory: "asc" },
@@ -27,15 +25,10 @@ export const getServiceBySlug = async (req: Request, res: Response, next: NextFu
 
     const service = await prisma.service.findUnique({
       where: { slug },
-      include: {
-        category: true,
-        options: true,
-      },
+      include: { category: true, options: true },
     });
 
-    if (!service) {
-      return res.status(404).json({ error: "Soin introuvable" });
-    }
+    if (!service) throw new AppError(404, "Soin introuvable.");
 
     res.json(service);
   } catch (error) {
@@ -66,18 +59,11 @@ export const createService = async (req: Request, res: Response, next: NextFunct
     };
 
     if (!name || !categoryId) {
-      return res
-        .status(400)
-        .json({ message: "Le nom du soin et la catégorie sont obligatoires." });
+      throw new AppError(400, "Le nom du soin et la catégorie sont obligatoires.");
     }
 
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-    });
-
-    if (!category) {
-      return res.status(400).json({ message: "Catégorie introuvable." });
-    }
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) throw new AppError(400, "Catégorie introuvable.");
 
     const baseSlug =
       slug ||
@@ -93,9 +79,7 @@ export const createService = async (req: Request, res: Response, next: NextFunct
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const existing = await prisma.service.findUnique({
-        where: { slug: finalSlug },
-      });
+      const existing = await prisma.service.findUnique({ where: { slug: finalSlug } });
       if (!existing) break;
       finalSlug = `${baseSlug}-${i++}`;
     }
@@ -119,10 +103,7 @@ export const createService = async (req: Request, res: Response, next: NextFunct
         categoryId: category.id,
         orderInCategory,
       },
-      include: {
-        category: true,
-        options: true,
-      },
+      include: { category: true, options: true },
     });
 
     return res.status(201).json(newService);
@@ -135,30 +116,15 @@ export const deleteService = async (req: Request, res: Response, next: NextFunct
   try {
     const id = Number(req.params.id);
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID de soin invalide." });
-    }
+    if (Number.isNaN(id)) throw new AppError(400, "ID de soin invalide.");
 
-    const existing = await prisma.service.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return res.status(404).json({ message: "Soin introuvable." });
-    }
+    const existing = await prisma.service.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, "Soin introuvable.");
 
     await prisma.$transaction(async (tx) => {
-      await tx.appointment.deleteMany({
-        where: { serviceId: id },
-      });
-
-      await tx.serviceOption.deleteMany({
-        where: { serviceId: id },
-      });
-
-      await tx.service.delete({
-        where: { id },
-      });
+      await tx.appointment.deleteMany({ where: { serviceId: id } });
+      await tx.serviceOption.deleteMany({ where: { serviceId: id } });
+      await tx.service.delete({ where: { id } });
     });
 
     return res.json({ message: "Soin supprimé avec succès." });
@@ -171,17 +137,10 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
   try {
     const id = Number(req.params.id);
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID de soin invalide." });
-    }
+    if (Number.isNaN(id)) throw new AppError(400, "ID de soin invalide.");
 
-    const existing = await prisma.service.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return res.status(404).json({ message: "Soin introuvable." });
-    }
+    const existing = await prisma.service.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, "Soin introuvable.");
 
     const {
       name,
@@ -210,14 +169,8 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
     let finalCategoryId = existing.categoryId;
 
     if (typeof categoryId === "number") {
-      const category = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
-
-      if (!category) {
-        return res.status(400).json({ message: "Catégorie introuvable." });
-      }
-
+      const category = await prisma.category.findUnique({ where: { id: categoryId } });
+      if (!category) throw new AppError(400, "Catégorie introuvable.");
       finalCategoryId = category.id;
       updateData.categoryId = finalCategoryId;
     }
@@ -233,11 +186,9 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
         .replace(/(^-|-$)/g, "");
 
     if (typeof slug === "string" && slug.trim() !== "") {
-      const baseSlug = makeSlug(slug);
-      finalSlug = baseSlug || existing.slug;
+      finalSlug = makeSlug(slug) || existing.slug;
     } else if (typeof name === "string" && name.trim() !== "") {
-      const baseSlug = makeSlug(name);
-      finalSlug = baseSlug || existing.slug;
+      finalSlug = makeSlug(name) || existing.slug;
     }
 
     if (finalSlug !== existing.slug) {
@@ -246,66 +197,37 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        const conflict = await prisma.service.findUnique({
-          where: { slug: candidate },
-        });
-
+        const conflict = await prisma.service.findUnique({ where: { slug: candidate } });
         if (!conflict || conflict.id === existing.id) {
           finalSlug = candidate;
           break;
         }
-
         candidate = `${finalSlug}-${i++}`;
       }
 
       updateData.slug = finalSlug;
     }
 
-    if (typeof name === "string") {
-      updateData.name = name;
-    }
-
-    if ("priceCents" in req.body) {
-      updateData.priceCents = priceCents ?? null;
-    }
-
-    if ("durationMinutes" in req.body) {
-      updateData.durationMinutes = durationMinutes ?? null;
-    }
-
-    if ("shortDescription" in req.body) {
-      updateData.shortDescription = shortDescription ?? null;
-    }
-
-    if ("description" in req.body) {
-      updateData.description = description ?? null;
-    }
-
-    if ("imageUrl" in req.body) {
-      updateData.imageUrl = imageUrl ?? null;
-    }
-
-    if (typeof isActive === "boolean") {
-      updateData.isActive = isActive;
-    }
+    if (typeof name === "string") updateData.name = name;
+    if ("priceCents" in req.body) updateData.priceCents = priceCents ?? null;
+    if ("durationMinutes" in req.body) updateData.durationMinutes = durationMinutes ?? null;
+    if ("shortDescription" in req.body) updateData.shortDescription = shortDescription ?? null;
+    if ("description" in req.body) updateData.description = description ?? null;
+    if ("imageUrl" in req.body) updateData.imageUrl = imageUrl ?? null;
+    if (typeof isActive === "boolean") updateData.isActive = isActive;
 
     if (updateData.categoryId && updateData.categoryId !== existing.categoryId) {
       const maxOrder = await prisma.service.aggregate({
         where: { categoryId: updateData.categoryId },
         _max: { orderInCategory: true },
       });
-
-      const newOrderInCategory = (maxOrder._max.orderInCategory ?? 0) + 1;
-      updateData.orderInCategory = newOrderInCategory;
+      updateData.orderInCategory = (maxOrder._max.orderInCategory ?? 0) + 1;
     }
 
     const updated = await prisma.service.update({
       where: { id },
       data: updateData,
-      include: {
-        category: true,
-        options: true,
-      },
+      include: { category: true, options: true },
     });
 
     return res.json(updated);

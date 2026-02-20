@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../src/prisma";
 import type { AuthRequest } from "../middleware/authMiddleware";
 import { UserRole } from "@prisma/client";
+import { AppError } from "../middleware/errorMiddleware";
 
 export async function getAllUsers(req: Request, res: Response, next: NextFunction) {
   try {
@@ -28,41 +29,25 @@ export async function getUserAppointments(req: Request, res: Response, next: Nex
   try {
     const id = Number(req.params.id);
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID utilisateur invalide." });
-    }
+    if (Number.isNaN(id)) throw new AppError(400, "ID utilisateur invalide.");
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-      },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "Utilisateur introuvable." });
-    }
+    if (!user) throw new AppError(404, "Utilisateur introuvable.");
 
     const clientAppointmentsRaw = await prisma.appointment.findMany({
       where: { userId: id },
       orderBy: { startAt: "desc" },
-      include: {
-        service: true,
-        practitioner: true,
-      },
+      include: { service: true, practitioner: true },
     });
 
     const practitionerAppointmentsRaw = await prisma.appointment.findMany({
       where: { practitionerId: id },
       orderBy: { startAt: "desc" },
-      include: {
-        service: true,
-        user: true,
-      },
+      include: { service: true, user: true },
     });
 
     const clientAppointments = clientAppointmentsRaw.map((a) => ({
@@ -81,11 +66,7 @@ export async function getUserAppointments(req: Request, res: Response, next: Nex
       clientName: `${a.user.firstName} ${a.user.lastName}`,
     }));
 
-    return res.json({
-      user,
-      clientAppointments,
-      practitionerAppointments,
-    });
+    return res.json({ user, clientAppointments, practitionerAppointments });
   } catch (error) {
     return next(error);
   }
@@ -96,46 +77,26 @@ export async function updateUserRole(req: AuthRequest, res: Response, next: Next
     const id = Number(req.params.id);
     const { role } = req.body as { role?: UserRole };
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID utilisateur invalide." });
-    }
-
-    if (!role) {
-      return res.status(400).json({ message: "Rôle manquant." });
-    }
-
-    if (!Object.values(UserRole).includes(role)) {
-      return res.status(400).json({ message: "Rôle invalide." });
-    }
+    if (Number.isNaN(id)) throw new AppError(400, "ID utilisateur invalide.");
+    if (!role) throw new AppError(400, "Rôle manquant.");
+    if (!Object.values(UserRole).includes(role)) throw new AppError(400, "Rôle invalide.");
 
     const targetUser = await prisma.user.findUnique({ where: { id } });
-
-    if (!targetUser) {
-      return res.status(404).json({ message: "Utilisateur introuvable." });
-    }
+    if (!targetUser) throw new AppError(404, "Utilisateur introuvable.");
 
     if (req.user?.role === UserRole.ADMIN && targetUser.role === UserRole.ADMIN) {
-      return res.status(403).json({
-        message: "Vous ne pouvez pas modifier un autre administrateur.",
-      });
+      throw new AppError(403, "Vous ne pouvez pas modifier un autre administrateur.");
     }
 
-    if (
-      req.user?.role === UserRole.ADMIN &&
-      targetUser.role === UserRole.SUPERADMIN
-    ) {
-      return res.status(403).json({
-        message: "Vous ne pouvez pas modifier un SUPERADMIN.",
-      });
+    if (req.user?.role === UserRole.ADMIN && targetUser.role === UserRole.SUPERADMIN) {
+      throw new AppError(403, "Vous ne pouvez pas modifier un SUPERADMIN.");
     }
 
     const isChangingAdminState =
       targetUser.role === UserRole.ADMIN || role === UserRole.ADMIN;
 
     if (isChangingAdminState && req.user?.role !== UserRole.SUPERADMIN) {
-      return res.status(403).json({
-        message: "Seul le SUPERADMIN peut gérer les administrateurs.",
-      });
+      throw new AppError(403, "Seul le SUPERADMIN peut gérer les administrateurs.");
     }
 
     const updated = await prisma.user.update({
@@ -166,44 +127,26 @@ export async function deleteUser(req: AuthRequest, res: Response, next: NextFunc
   try {
     const id = Number(req.params.id);
 
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ message: "ID utilisateur invalide." });
-    }
+    if (Number.isNaN(id)) throw new AppError(400, "ID utilisateur invalide.");
 
     const authUserId = req.user?.id;
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        role: true,
-        isAdmin: true,
-      },
+      select: { id: true, role: true, isAdmin: true },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "Utilisateur introuvable." });
-    }
+    if (!user) throw new AppError(404, "Utilisateur introuvable.");
 
-    if (
-      user.role === UserRole.ADMIN ||
-      user.role === UserRole.SUPERADMIN ||
-      user.isAdmin
-    ) {
-      return res.status(400).json({
-        message: "Impossible de supprimer un compte administrateur.",
-      });
+    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPERADMIN || user.isAdmin) {
+      throw new AppError(400, "Impossible de supprimer un compte administrateur.");
     }
 
     if (authUserId && authUserId === user.id) {
-      return res.status(400).json({
-        message: "Vous ne pouvez pas supprimer votre propre compte.",
-      });
+      throw new AppError(400, "Vous ne pouvez pas supprimer votre propre compte.");
     }
 
-    await prisma.user.delete({
-      where: { id: user.id },
-    });
+    await prisma.user.delete({ where: { id: user.id } });
 
     return res.json({ message: "Utilisateur supprimé avec succès." });
   } catch (error) {

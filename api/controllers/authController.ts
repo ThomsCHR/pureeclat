@@ -4,6 +4,7 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import validator from "validator";
 import { Resend } from "resend";
+import { AppError } from "../middleware/errorMiddleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const JWT_EXPIRES_IN = "1h";
@@ -21,39 +22,18 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     const { firstName, lastName, email, phone, password } = req.body;
 
     if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({
-        message: "Tous les champs obligatoires ne sont pas remplis.",
-      });
+      throw new AppError(400, "Tous les champs obligatoires ne sont pas remplis.");
     }
 
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        message: "Adresse e-mail invalide.",
-      });
-    }
+    if (!validator.isEmail(email)) throw new AppError(400, "Adresse e-mail invalide.");
 
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existing) {
-      return res.status(409).json({
-        message: "Un compte existe déjà avec cette adresse e-mail.",
-      });
-    }
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) throw new AppError(409, "Un compte existe déjà avec cette adresse e-mail.");
 
     const passwordHash = await argon2.hash(password);
 
     const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        passwordHash,
-        role: "CLIENT",
-        isActive: true,
-      },
+      data: { firstName, lastName, email, phone, passwordHash, role: "CLIENT", isActive: true },
     });
 
     try {
@@ -79,18 +59,12 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       console.log("Resend email data:", data);
       console.log("Resend email error:", error);
 
-      if (error) {
-        console.error("Erreur Resend:", error);
-      }
+      if (error) console.error("Erreur Resend:", error);
     } catch (err) {
-      console.error("Erreur lors de l'envoi de l'email de bienvenue (throw):", err);
+      console.error("Erreur lors de l'envoi de l'email de bienvenue:", err);
     }
 
-    const token = createToken({
-      userId: user.id,
-      role: user.role,
-      isAdmin: user.isAdmin,
-    });
+    const token = createToken({ userId: user.id, role: user.role, isAdmin: user.isAdmin });
 
     return res.status(201).json({
       token,
@@ -113,33 +87,15 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email et mot de passe sont requis." });
-    }
+    if (!email || !password) throw new AppError(400, "Email et mot de passe sont requis.");
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user || !user.isActive) {
-      return res
-        .status(401)
-        .json({ message: "Identifiants incorrects ou compte inactif." });
-    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive) throw new AppError(401, "Identifiants incorrects ou compte inactif.");
 
     const isValid = await argon2.verify(user.passwordHash, password);
+    if (!isValid) throw new AppError(401, "Identifiants incorrects.");
 
-    if (!isValid) {
-      return res.status(401).json({ message: "Identifiants incorrects." });
-    }
-
-    const token = createToken({
-      userId: user.id,
-      role: user.role,
-      isAdmin: user.isAdmin,
-    });
+    const token = createToken({ userId: user.id, role: user.role, isAdmin: user.isAdmin });
 
     return res.json({
       token,
