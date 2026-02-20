@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { apiGetCategories, apiCreateService, type CategoryApi } from "../api/apiClient";
 
-type Category = {
-  id: number;
-  name: string;
-  slug: string;
-};
+type Category = CategoryApi;
 
 export default function AddServicePage() {
   const navigate = useNavigate();
@@ -39,15 +36,11 @@ export default function AddServicePage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/categories");
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.message || "Erreur chargement catégories");
-
-        setCategories(Array.isArray(data.categories) ? data.categories : data);
+        const data = await apiGetCategories();
+        setCategories(data.categories);
       } catch (err) {
         console.error(err);
-        setError("Impossible de charger les catégories.");
+        setError(err instanceof Error ? err.message : "Impossible de charger les catégories.");
       } finally {
         setLoading(false);
       }
@@ -89,29 +82,16 @@ export default function AddServicePage() {
       setSaving(true);
       setError(null);
 
-      const res = await fetch("http://localhost:3000/api/services", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-        body: JSON.stringify({
-          name,
-          slug,
-          categoryId,
-          durationMinutes: duration,
-          priceCents,
-          shortDescription,
-          description,
-          imageUrl,
-        }),
+      await apiCreateService({
+        name,
+        slug,
+        categoryId,
+        durationMinutes: duration,
+        priceCents,
+        shortDescription,
+        description,
+        imageUrl,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Erreur lors de la création du soin.");
-      }
 
       navigate("/tarifs");
     } catch (err) {

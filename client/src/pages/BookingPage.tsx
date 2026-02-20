@@ -151,11 +151,7 @@ export default function BookingPage() {
       navigate("/profil");
     } catch (err) {
       console.error(err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Impossible de réserver ce créneau pour le moment."
-      );
+      setError(err instanceof Error ? err.message : "Impossible de réserver ce créneau pour le moment.");
     } finally {
       setCreating(false);
     }

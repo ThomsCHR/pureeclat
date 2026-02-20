@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
     } catch (err) {
       console.error(err);
-      alert("Impossible de mettre à jour le rôle.");
+      setError(err instanceof Error ? err.message : "Impossible de mettre à jour le rôle.");
     } finally {
       setSavingId(null);
     }
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
     } catch (err) {
       console.error(err);
-      alert("Impossible de supprimer cet utilisateur.");
+      setError(err instanceof Error ? err.message : "Impossible de supprimer cet utilisateur.");
     }
   };
 

@@ -26,6 +26,7 @@ export default function AdminUserAppointmentsPage() {
   const [practitionerAppointments, setPractitionerAppointments] = useState<PractitionerAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -76,7 +77,7 @@ export default function AdminUserAppointmentsPage() {
       );
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de l'annulation.");
+      setActionError(err instanceof Error ? err.message : "Erreur lors de l'annulation.");
     }
   };
 
@@ -156,6 +157,12 @@ export default function AdminUserAppointmentsPage() {
           <p className="text-sm text-slate-600">{user.email}</p>
           <p className="text-xs text-slate-500 mt-1">Rôle : {user.role}</p>
         </div>
+
+        {actionError && (
+          <div className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+            {actionError}
+          </div>
+        )}
 
         {/* RDV en tant que client(e) */}
         <section>

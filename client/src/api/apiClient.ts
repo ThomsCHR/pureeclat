@@ -52,6 +52,12 @@ export async function request<TResponse = unknown>(
 
 /* --------- TYPES METIER --------- */
 
+export type CategoryApi = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
 export type ServiceOptionApi = {
   id: number;
   name: string;
@@ -90,6 +96,26 @@ export type PractitionerAvailabilityApi = {
 };
 
 /* --------- FONCTIONS API --------- */
+
+export function apiGetCategories() {
+  return request<{ categories: CategoryApi[] }>("/api/categories");
+}
+
+export function apiCreateService(body: {
+  name: string;
+  slug?: string;
+  categoryId: number;
+  durationMinutes?: number | null;
+  priceCents?: number | null;
+  shortDescription?: string;
+  description?: string;
+  imageUrl?: string;
+}) {
+  return request<ServiceApi>("/api/services", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
 
 export function apiGetServiceBySlug(slug: string) {
   return request<ServiceApi>(`/api/services/${slug}`);

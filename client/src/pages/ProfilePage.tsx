@@ -124,7 +124,7 @@ export default function ProfilePage() {
       );
     } catch (err) {
       console.error(err);
-      alert("Impossible d'annuler ce rendez-vous pour le moment.");
+      setError(err instanceof Error ? err.message : "Impossible d'annuler ce rendez-vous pour le moment.");
     }
   };
 
