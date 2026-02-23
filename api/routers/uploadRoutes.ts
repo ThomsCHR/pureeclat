@@ -36,11 +36,12 @@ router.post(
   upload.single("image"),
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.file) {
+      const file = (req as Request & { file?: Express.Multer.File }).file;
+      if (!file) {
         res.status(400).json({ message: "Aucun fichier reçu." });
         return;
       }
-      const url = `/uploads/${req.file.filename}`;
+      const url = `/uploads/${file.filename}`;
       res.json({ url });
     } catch (err) {
       next(err);

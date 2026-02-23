@@ -278,10 +278,10 @@ export default function ServicesListPage() {
       {/* Modale création de soin */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl overflow-y-auto max-h-[90vh]">
+          <div className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-white p-6 shadow-xl overflow-y-auto max-h-[92vh] sm:max-h-[90vh]">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Créer un nouveau soin</h2>
               <button
