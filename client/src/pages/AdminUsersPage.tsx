@@ -51,6 +51,9 @@ export default function AdminUsersPage() {
   const normalizePhone = (phone?: string | null) =>
     (phone ?? "").replace(/\D/g, "");
 
+  const displayEmail = (email: string) =>
+    email.endsWith("@walkin.pureeclat.fr") ? "—" : email;
+
   const normalizedSearch = search.toLowerCase().trim();
   const normalizedSearchDigits = search.replace(/\D/g, "");
 
@@ -181,7 +184,7 @@ export default function AdminUsersPage() {
                     <p className="text-sm font-semibold text-slate-900">
                       {u.firstName} {u.lastName}
                     </p>
-                    <p className="text-xs text-slate-600 mt-1">{u.email}</p>
+                    <p className="text-xs text-slate-600 mt-1">{displayEmail(u.email)}</p>
                     <p className="text-xs text-slate-500">
                       Tél : {u.phone ?? "-"}
                     </p>
@@ -249,7 +252,7 @@ export default function AdminUsersPage() {
                             {u.firstName} {u.lastName}
                           </button>
                         </td>
-                        <td className="px-4 py-2">{u.email}</td>
+                        <td className="px-4 py-2">{displayEmail(u.email)}</td>
                         <td className="px-4 py-2">{u.phone ?? "-"}</td>
                         <td className="px-4 py-2">
                           <select

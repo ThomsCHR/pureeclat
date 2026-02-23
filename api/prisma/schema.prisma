@@ -24,6 +24,7 @@ model User {
   role         UserRole @default(CLIENT)
   isActive     Boolean  @default(true)
   isAdmin      Boolean  @default(false)
+  institute    String?
 
   emailVerifiedAt DateTime?
 
@@ -105,6 +106,7 @@ model Appointment {
   serviceOption   ServiceOption? @relation(fields: [serviceOptionId], references: [id])
 
   status    AppointmentStatus @default(BOOKED)
+  notes     String?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 }

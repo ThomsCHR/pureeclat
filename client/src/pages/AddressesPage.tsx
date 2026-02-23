@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+
+type Estheticienne = {
+  name: string;
+  title: string;
+};
 
 type Address = {
   id: string;
@@ -13,6 +18,7 @@ type Address = {
   openingHours: string[];
   imageUrl: string;
   mapUrl: string;
+  estheticiennes: Estheticienne[];
 };
 
 const ADDRESSES: Address[] = [
@@ -33,6 +39,11 @@ const ADDRESSES: Address[] = [
       "Samedi : 10h00 – 18h00",
       "Dimanche : fermé",
     ],
+    estheticiennes: [
+      { name: "Cassandra Draijer", title: "Directrice & fondatrice" },
+      { name: "Léa Moreau",        title: "Spécialiste soins visage" },
+      { name: "Sophie Blanc",      title: "Experte soins corps" },
+    ],
   },
   {
     id: "lyon",
@@ -50,6 +61,11 @@ const ADDRESSES: Address[] = [
       "Lundi – Vendredi : 9h30 – 19h00",
       "Samedi : 10h00 – 18h30",
       "Dimanche : fermé",
+    ],
+    estheticiennes: [
+      { name: "Camille Tissot", title: "Responsable de l'institut" },
+      { name: "Jade Renaud",    title: "Spécialiste anti-âge" },
+      { name: "Clara Petit",    title: "Experte soins bien-être" },
     ],
   },
   {
@@ -69,10 +85,16 @@ const ADDRESSES: Address[] = [
       "Samedi : 10h00 – 18h00",
       "Dimanche : fermé",
     ],
+    estheticiennes: [
+      { name: "Marine Dulac",  title: "Responsable de l'institut" },
+      { name: "Inès Fabre",    title: "Spécialiste soins du regard" },
+      { name: "Anaïs Martin",  title: "Experte en modelage" },
+    ],
   },
 ];
 
 export default function AddressesPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState<Address | null>(() => {
     const city = searchParams.get("city");
@@ -187,11 +209,37 @@ export default function AddressesPage() {
                 </div>
               </div>
 
+              {/* Esthéticiennes */}
+              <div className="mt-6">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
+                  Notre équipe
+                </h3>
+                <div className="space-y-2">
+                  {selected.estheticiennes.map((e) => (
+                    <div key={e.name} className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">
+                        {e.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 leading-tight">{e.name}</p>
+                        <p className="text-xs text-slate-500">{e.title}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="mt-6 flex flex-wrap gap-3">
-                <button className="rounded-full bg-slate-900 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black">
+                <button
+                  onClick={() => navigate(`/soins?institute=${selected.id}`)}
+                  className="rounded-full bg-slate-900 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-black transition-colors"
+                >
                   Prendre rendez-vous
                 </button>
-                <button className="rounded-full border border-slate-300 bg-white px-5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">
+                <button
+                  onClick={() => navigate("/soins")}
+                  className="rounded-full border border-slate-300 bg-white px-5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+                >
                   Voir le détail des soins
                 </button>
               </div>

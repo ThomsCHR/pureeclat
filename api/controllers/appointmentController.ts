@@ -124,8 +124,14 @@ export const getAvailability = async (req: AuthRequest, res: Response, next: Nex
     const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
     const dayEnd = new Date(`${dateStr}T23:59:59.999Z`);
 
+    const institute = req.query.institute as string | undefined;
+
     const practitioners = await prisma.user.findMany({
-      where: { role: UserRole.ESTHETICIENNE, isActive: true },
+      where: {
+        role: UserRole.ESTHETICIENNE,
+        isActive: true,
+        ...(institute ? { institute } : {}),
+      },
       orderBy: { lastName: "asc" },
     });
 

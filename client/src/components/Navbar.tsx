@@ -17,7 +17,8 @@ export default function Navbar() {
   const [openSolutions, setOpenSolutions] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
+  const isStaff = isAdmin || user?.role === "ESTHETICIENNE" || user?.role === "SUPERADMIN";
 
   const handleLogoClick = () => {
     setLoading(true);
@@ -249,6 +250,16 @@ export default function Navbar() {
                   {s.label}
                 </button>
               ))}
+
+            {/* Planning (staff uniquement) */}
+            {isStaff && (
+              <button
+                onClick={() => navigate("/planning")}
+                className="transition hover:text-rose-300"
+              >
+                Planning
+              </button>
+            )}
           </div>
 
           {/* CTA + Connexion desktop */}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   apiGetPricingServices,
   type PricingServiceApi,
@@ -7,6 +7,8 @@ import {
 
 export default function ServicesListPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const institute = searchParams.get("institute");
 
   const [services, setServices] = useState<PricingServiceApi[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ export default function ServicesListPage() {
                           </div>
 
                           <button
-                            onClick={() => navigate(`/soins/${service.slug}`)} // ✅ bonne route
+                            onClick={() => navigate(`/soins/${service.slug}${institute ? `?institute=${institute}` : ""}`)}
                             className="text-[11px] uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-700 hover:underline"
                           >
                             Voir le détail →

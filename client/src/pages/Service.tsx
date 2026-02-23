@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   apiGetServiceBySlug,
@@ -18,6 +18,8 @@ type EditFormState = {
 export default function ServicePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const institute = searchParams.get("institute");
   const { isAdmin } = useAuth();
 
   const [service, setService] = useState<ServiceApi | null>(null);
@@ -327,7 +329,7 @@ export default function ServicePage() {
             {/* CTA */}
             <button
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900"
-              onClick={() => navigate(`/reservation/${service.slug}`)}
+              onClick={() => navigate(`/reservation/${service.slug}${institute ? `?institute=${institute}` : ""}`)}
             >
               <span>Prendre RDV</span>
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-black">

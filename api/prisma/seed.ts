@@ -312,27 +312,13 @@ async function main() {
 
   console.log("👤 Users créés avec Argon2 : admin & client");
 
-    // --- ESTHETIENNES ---
+  // --- ESTHETIENNES ---
   const practitionerPasswordHash = await argon2.hash("esth123456789-!xxx!z590b3z");
 
+  // --- PARIS 16 ---
   await prisma.user.upsert({
-    where: { email: "camille@pureeclat.com" },
-    update: {},
-    create: {
-      firstName: "Camille",
-      lastName: "Dupont",
-      email: "camille@pureeclat.com",
-      passwordHash: practitionerPasswordHash,
-      role: UserRole.ESTHETICIENNE,
-      phone: "0611111111",
-      isActive: true,
-      isAdmin: true,
-    },
-  });
-
-    await prisma.user.upsert({
     where: { email: "cassandra@gmail.com" },
-    update: {},
+    update: { firstName: "Cassandra", lastName: "Draijer", institute: "paris16", isAdmin: false },
     create: {
       firstName: "Cassandra",
       lastName: "Draijer",
@@ -341,21 +327,129 @@ async function main() {
       role: UserRole.ESTHETICIENNE,
       phone: "0621111111",
       isActive: true,
-      isAdmin: true,
+      institute: "paris16",
     },
   });
 
   await prisma.user.upsert({
     where: { email: "lea@pureeclat.com" },
-    update: {},
+    update: { firstName: "Léa", lastName: "Moreau", institute: "paris16" },
     create: {
       firstName: "Léa",
-      lastName: "Martin",
+      lastName: "Moreau",
       email: "lea@pureeclat.com",
       passwordHash: practitionerPasswordHash,
       role: UserRole.ESTHETICIENNE,
       phone: "0622222222",
       isActive: true,
+      institute: "paris16",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "sophie@pureeclat.com" },
+    update: { institute: "paris16" },
+    create: {
+      firstName: "Sophie",
+      lastName: "Blanc",
+      email: "sophie@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333301",
+      isActive: true,
+      institute: "paris16",
+    },
+  });
+
+  // --- LYON ---
+  await prisma.user.upsert({
+    where: { email: "camille@pureeclat.com" },
+    update: { firstName: "Camille", lastName: "Tissot", institute: "lyon", isAdmin: false },
+    create: {
+      firstName: "Camille",
+      lastName: "Tissot",
+      email: "camille@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0611111111",
+      isActive: true,
+      institute: "lyon",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "jade@pureeclat.com" },
+    update: { institute: "lyon" },
+    create: {
+      firstName: "Jade",
+      lastName: "Renaud",
+      email: "jade@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333302",
+      isActive: true,
+      institute: "lyon",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "clara@pureeclat.com" },
+    update: { institute: "lyon" },
+    create: {
+      firstName: "Clara",
+      lastName: "Petit",
+      email: "clara@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333303",
+      isActive: true,
+      institute: "lyon",
+    },
+  });
+
+  // --- MARSEILLE ---
+  await prisma.user.upsert({
+    where: { email: "marine@pureeclat.com" },
+    update: { institute: "marseille" },
+    create: {
+      firstName: "Marine",
+      lastName: "Dulac",
+      email: "marine@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333304",
+      isActive: true,
+      institute: "marseille",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "ines@pureeclat.com" },
+    update: { institute: "marseille" },
+    create: {
+      firstName: "Inès",
+      lastName: "Fabre",
+      email: "ines@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333305",
+      isActive: true,
+      institute: "marseille",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "anais@pureeclat.com" },
+    update: { institute: "marseille" },
+    create: {
+      firstName: "Anaïs",
+      lastName: "Martin",
+      email: "anais@pureeclat.com",
+      passwordHash: practitionerPasswordHash,
+      role: UserRole.ESTHETICIENNE,
+      phone: "0633333306",
+      isActive: true,
+      institute: "marseille",
     },
   });
 

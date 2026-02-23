@@ -9,6 +9,7 @@ import appointmentRoutes from "../routers/appointmentRoutes";
 import availabilityRoutes from "../routers/availabilityRoutes";
 import categoryRoutes from "../routers/categoryRoutes";
 import userRoutes from "../routers/userRoutes";
+import staffRoutes from "../routers/staffRoutes";
 import { errorHandler } from "../middleware/errorMiddleware";
 
 
@@ -31,6 +32,7 @@ app.use("/api/availability", availabilityRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/staff", staffRoutes);
 
 app.get("/api/me", authMiddleware, (req, res) => {
   // @ts-ignore (ou mieux : typage avec AuthRequest)

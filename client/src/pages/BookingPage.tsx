@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   apiCreateAppointment,
@@ -19,20 +19,24 @@ type ServiceLight = {
   durationMinutes: number | null;
 };
 
-const getPractitionerSubtitle = (name: string) => {
-  if (name.startsWith("Cassandra")) {
-    return "Directrice & fondatrice Pure Éclat";
-  }
-  if (name.startsWith("Camille")) {
-    return "Responsable";
-  }
+const INSTITUTES = [
+  { id: "paris16",   label: "Paris 16",   address: "12 av. des Lumières, 75016" },
+  { id: "lyon",      label: "Lyon",       address: "8 quai des Soins, 69002" },
+  { id: "marseille", label: "Marseille",  address: "21 rue des Calanques, 13007" },
+];
 
+const getPractitionerSubtitle = (name: string) => {
+  if (name.startsWith("Cassandra")) return "Directrice & fondatrice Pure Éclat";
+  if (name.startsWith("Camille"))   return "Responsable — Institut Lyon";
+  if (name.startsWith("Marine"))    return "Responsable — Institut Marseille";
   return "Esthéticienne Pure Éclat";
 };
 
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const institute = searchParams.get("institute") ?? undefined;
   const { isAuthenticated } = useAuth();
 
   const [service, setService] = useState<ServiceLight | null>(null);
@@ -88,14 +92,14 @@ export default function BookingPage() {
 
   // Charger les créneaux disponibles pour une date donnée
   useEffect(() => {
-    if (!service) return;
+    if (!service || !institute) return;
 
     const fetchAvailability = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const data = await apiGetAvailability(service.id, date);
+        const data = await apiGetAvailability(service.id, date, institute);
         const practitioners = data.practitioners ?? [];
 
         // 🕒 Si on est sur la date du jour, vérifier s'il reste au moins un créneau futur
@@ -125,7 +129,7 @@ export default function BookingPage() {
     };
 
     fetchAvailability();
-  }, [service, date, todayStr]);
+  }, [service, date, todayStr, institute]);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", {
@@ -178,8 +182,7 @@ export default function BookingPage() {
               {service ? service.name : "Chargement du soin..."}
             </h1>
             <p className="text-sm text-slate-600">
-              Choisissez une date et un créneau parmi les esthéticiennes
-              disponibles.
+              Choisissez un institut, une date et un créneau.
             </p>
           </div>
 
@@ -195,23 +198,56 @@ export default function BookingPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              min={todayStr} // ⬅️ pas de date passée
+              min={todayStr}
               className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
             />
           </div>
         </div>
 
-        {error && (
+        {/* Sélecteur d'institut */}
+        {!institute ? (
+          <div className="mb-8">
+            <p className="mb-3 text-sm font-semibold text-slate-900">
+              Choisissez votre institut
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {INSTITUTES.map((inst) => (
+                <button
+                  key={inst.id}
+                  onClick={() => setSearchParams({ institute: inst.id })}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-slate-900 hover:shadow-md transition-all"
+                >
+                  <p className="text-sm font-semibold text-slate-900">{inst.label}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{inst.address}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white">
+              📍 Institut {INSTITUTES.find((i) => i.id === institute)?.label ?? institute}
+            </span>
+            <button
+              onClick={() => setSearchParams({})}
+              className="text-xs text-slate-500 underline underline-offset-4 hover:text-slate-800"
+            >
+              Changer
+            </button>
+          </div>
+        )}
+
+        {institute && error && (
           <div className="mb-4 rounded-2xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
             {error}
           </div>
         )}
 
-        {loading && (
+        {institute && loading && (
           <p className="text-sm text-slate-500">Chargement des créneaux…</p>
         )}
 
-        {!loading && !error && (
+        {institute && !loading && !error && (
           <>
             {availability.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#e4d4c5] bg-[#fff8f2] px-4 py-5 text-sm text-slate-600">

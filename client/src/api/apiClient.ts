@@ -121,9 +121,11 @@ export function apiGetServiceBySlug(slug: string) {
   return request<ServiceApi>(`/api/services/${slug}`);
 }
 
-export function apiGetAvailability(serviceId: number, date: string) {
+export function apiGetAvailability(serviceId: number, date: string, institute?: string) {
+  const params = new URLSearchParams({ serviceId: String(serviceId), date });
+  if (institute) params.set("institute", institute);
   return request<{ practitioners: PractitionerAvailabilityApi[] }>(
-    `/api/availability?serviceId=${serviceId}&date=${date}`
+    `/api/availability?${params}`
   );
 }
 
@@ -308,6 +310,74 @@ export function apiUpdateUserRole(id: number, role: UserRoleApi) {
     method: "PATCH",
     body: JSON.stringify({ role }),
   });
+}
+
+// ---- Types Planning Staff ----
+export type StaffAppointmentApi = {
+  id: number;
+  startAt: string;
+  endAt: string;
+  status: string;
+  notes: string | null;
+  service: { id: number; name: string; durationMinutes: number | null };
+  client: { id: number; firstName: string; lastName: string; phone: string; email: string };
+};
+
+export type StaffPractitionerApi = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  institute: string | null;
+  appointments: StaffAppointmentApi[];
+};
+
+export type StaffServiceApi = {
+  id: number;
+  name: string;
+  durationMinutes: number | null;
+  priceCents: number | null;
+};
+
+// ---- Fonctions Planning Staff ----
+export function apiGetPlanning(date: string, institute?: string) {
+  const params = new URLSearchParams({ date });
+  if (institute) params.set("institute", institute);
+  return request<{ date: string; practitioners: StaffPractitionerApi[] }>(
+    `/api/staff/planning?${params}`
+  );
+}
+
+export function apiCreateStaffAppointment(body: {
+  practitionerId: number;
+  serviceId: number;
+  startAt: string;
+  clientFirstName: string;
+  clientLastName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  notes?: string;
+}) {
+  return request<{ appointment: unknown }>("/api/staff/appointments", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function apiUpdateStaffAppointment(id: number, body: { serviceId?: number; startAt?: string; notes?: string }) {
+  return request<{ appointment: unknown }>(`/api/staff/appointments/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function apiDeleteStaffAppointment(id: number) {
+  return request<{ message: string }>(`/api/staff/appointments/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function apiGetStaffServices() {
+  return request<{ services: StaffServiceApi[] }>("/api/staff/services");
 }
 
 // Supprimer un utilisateur (admin)

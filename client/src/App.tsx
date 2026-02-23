@@ -14,6 +14,7 @@ import AdminUserAppointmentsPage from "./pages/AdminUserAppointmentsPage";
 import ServicesListPage from "./pages/ServicesListPage";
 import AddressesPage from "./pages/AddressesPage";
 import ArticlePage from "./pages/ArticlePage";
+import PlanningPage from "./pages/PlanningPage";
 
 
 
@@ -38,6 +39,7 @@ function App() {
         <Route path="/soins" element={<ServicesListPage />} />
         <Route path="/adresses" element={<AddressesPage />} />
         <Route path="/articles/:slug" element={<ArticlePage />} />
+        <Route path="/planning" element={<PlanningPage />} />
         
       </Routes>
     </BrowserRouter>
