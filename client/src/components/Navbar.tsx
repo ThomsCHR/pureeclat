@@ -294,69 +294,76 @@ export default function Navbar() {
 
           {/* Bouton menu mobile */}
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full bg:white/20 backdrop-blur border border-white/30 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur border border-white/30 md:hidden"
             onClick={() => setMobileOpen((prev) => !prev)}
+            aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
             <div className="space-y-1">
-              <span className="block h-0.5 w-4 bg-white" />
-              <span className="block h-0.5 w-4 bg-white" />
+              <span className={`block h-0.5 w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "rotate-45 translate-y-1.5" : ""}`} />
+              <span className={`block h-0.5 w-5 bg-white transition-all duration-300 ${mobileOpen ? "opacity-0 scale-x-0" : ""}`} />
+              <span className={`block h-0.5 w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
             </div>
           </button>
         </nav>
 
         {/* Menu mobile déroulant */}
-        {mobileOpen && (
-          <div className="md:hidden bg-black/95 text-white border-t border-white/10">
-            <div className="mx-auto max-w-6xl px-4 py-4 space-y-3 text-sm">
-              {/* Autres liens */}
-              <div className="pt-2 border-t border-white/10 space-y-2">
-                {sections
-                  .filter((s) => s.id !== "solutions")
-                  .map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => handleSectionClick(s.id)}
-                      className="block w-full text-left text-sm text:white/90 hover:text-rose-300"
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-              </div>
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-black/95 text-white border-t border-white/10 ${mobileOpen ? "max-h-[500px]" : "max-h-0"}`}>
+          <div className="mx-auto max-w-6xl px-4 py-4 space-y-3 text-sm">
+            {/* Rituels */}
+            <div>
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/soins"); }}
+                className="block w-full text-left text-sm text-white/90 hover:text-rose-300 transition"
+              >
+                Rituels
+              </button>
+            </div>
 
-              {/* Planning (staff uniquement) */}
-              {isStaff && (
-                <div className="pt-2 border-t border-white/10">
+            {/* Autres liens */}
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              {sections
+                .filter((s) => s.id !== "solutions")
+                .map((s) => (
                   <button
-                    onClick={() => { setMobileOpen(false); navigate("/planning"); }}
-                    className="block w-full text-left text-sm text-rose-300 hover:text-rose-200 font-medium"
+                    key={s.id}
+                    onClick={() => handleSectionClick(s.id)}
+                    className="block w-full text-left text-sm text-white/90 hover:text-rose-300 transition"
                   >
-                    Planning
+                    {s.label}
                   </button>
-                </div>
-              )}
+                ))}
+            </div>
 
-              {/* CTA + compte */}
-              <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+            {/* Planning (staff uniquement) */}
+            {isStaff && (
+              <div className="pt-2 border-t border-white/10">
                 <button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    navigate("/soins");
-                  }}
-                  className="w-full rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+                  onClick={() => { setMobileOpen(false); navigate("/planning"); }}
+                  className="block w-full text-left text-sm text-rose-300 hover:text-rose-200 font-medium transition"
                 >
-                  Prendre RDV
-                </button>
-
-                <button
-                  onClick={handleAuthClick}
-                  className="w-full rounded-full bg-white text-xs font-semibold text-black py-2 flex items-center justify-center gap-2"
-                >
-                  {isAuthenticated ? "Mon profil" : "Se connecter"}
+                  Planning
                 </button>
               </div>
+            )}
+
+            {/* CTA + compte */}
+            <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/soins"); }}
+                className="w-full rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                Prendre RDV
+              </button>
+
+              <button
+                onClick={handleAuthClick}
+                className="w-full rounded-full bg-white text-xs font-semibold text-black py-2 flex items-center justify-center gap-2 transition hover:bg-white/90"
+              >
+                {isAuthenticated ? "Mon profil" : "Se connecter"}
+              </button>
             </div>
           </div>
-        )}
+        </div>
       </header>
 
       {loading && <MiniLoader />}
