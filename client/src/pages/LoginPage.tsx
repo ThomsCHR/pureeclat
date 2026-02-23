@@ -20,17 +20,8 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      // 👉 appel de ton client API
       const data = await apiLogin(email, password);
-
-      // met à jour le contexte / localStorage pour le token
-      login(data.token, data.user);
-
-      // garder l'utilisateur en cache pour le front
-      if (data.user) {
-        localStorage.setItem("authUser", JSON.stringify(data.user));
-      }
-
+      login(data.user);
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -137,6 +128,7 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
+                  onClick={() => navigate("/mot-de-passe-oublie")}
                   className="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2"
                 >
                   Mot de passe oublié ?

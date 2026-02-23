@@ -44,7 +44,7 @@ export default function RegisterPage() {
         throw new Error("Réponse invalide du serveur : utilisateur manquant.");
       }
 
-      login(data.token, data.user);
+      login(data.user);
 
       // 🔔 petit message info (au cas où tu restes sur la page)
       setInfo(

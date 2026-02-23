@@ -3,8 +3,10 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   type ReactNode,
 } from "react";
+import { apiGetMe, apiLogout } from "../api/apiClient";
 
 export type AuthUser = {
   id: number;
@@ -12,57 +14,56 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: string;          // "CLIENT" | "ADMIN" | "ESTHETICIENNE" | "SUPERADMIN"
-  isAdmin?: boolean;     // dépend du token backend
+  isAdmin?: boolean;
 };
 
 type AuthContextType = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-
-  // Nouveaux flags mieux définis
-  isAdmin: boolean;       // ADMIN + SUPERADMIN
-  isSuperAdmin: boolean;  // SUPERADMIN uniquement
-
-  login: (token: string, user: AuthUser) => void;
-  logout: () => void;
+  authLoading: boolean;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  login: (user: AuthUser) => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const stored = localStorage.getItem("authUser");
-    if (!stored) return null;
-    try {
-      return JSON.parse(stored) as AuthUser;
-    } catch {
-      localStorage.removeItem("authUser");
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("authToken") && user !== null
-  );
+  // Vérifie la session via le cookie HttpOnly au montage
+  useEffect(() => {
+    apiGetMe()
+      .then(({ user: u }) => {
+        setUser(u);
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        setUser(null);
+        setIsAuthenticated(false);
+      })
+      .finally(() => setAuthLoading(false));
+  }, []);
 
-  const login = (token: string, nextUser: AuthUser) => {
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("authUser", JSON.stringify(nextUser));
+  const login = (nextUser: AuthUser) => {
     setUser(nextUser);
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+  const logout = async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // Même en cas d'erreur, on déconnecte côté client
+    }
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  // 🔥 Backend envoie isAdmin = true si ADMIN ou SUPERADMIN
   const isAdmin = !!user?.isAdmin;
-
-  // 🔥 SUPERADMIN strict
   const isSuperAdmin = user?.role === "SUPERADMIN";
 
   return (
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated,
+        authLoading,
         isAdmin,
         isSuperAdmin,
         login,

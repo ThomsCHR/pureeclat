@@ -97,8 +97,8 @@ export default function ProfilePage() {
     fetchPractitionerAppointments();
   }, [isAuthenticated, role]);
 
-  const handleLogout = () => {
-    logout(); // ← on passe par le contexte
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 

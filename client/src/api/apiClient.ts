@@ -1,10 +1,6 @@
 import type { AuthUser } from "../context/AuthContext";
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-function getAuthToken(): string | null {
-  return localStorage.getItem("authToken");
-}
-
 // petit helper pour lire un éventuel message d'erreur
 function getErrorMessageFromData(data: unknown, status: number): string {
   if (typeof data === "object" && data !== null && "message" in data) {
@@ -18,12 +14,10 @@ export async function request<TResponse = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<TResponse> {
-  const token = getAuthToken();
-
   const res = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
@@ -36,10 +30,8 @@ export async function request<TResponse = unknown>(
     // pas de JSON, ce n'est pas grave
   }
 
-  if (res.status === 401) {
-    // Token expiré ou invalide → on déconnecte et on redirige
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+  if (res.status === 401 && path !== "/api/auth/me") {
+    // Cookie expiré ou invalide → on redirige vers la connexion
     window.location.href = "/connexion";
   }
 
@@ -146,7 +138,6 @@ export function apiCreateAppointment(body: {
 
 
 export type LoginResponse = {
-  token: string;
   user: AuthUser;
 };
 
@@ -156,8 +147,6 @@ export function apiLogin(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
 }
-
-// Register 
 
 export function apiRegister(body: {
   firstName: string;
@@ -169,6 +158,28 @@ export function apiRegister(body: {
   return request<LoginResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function apiLogout() {
+  return request<{ message: string }>("/api/auth/logout", { method: "POST" });
+}
+
+export function apiGetMe() {
+  return request<{ user: AuthUser }>("/api/auth/me");
+}
+
+export function apiForgotPassword(email: string) {
+  return request<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function apiResetPassword(token: string, password: string) {
+  return request<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
   });
 }
 
@@ -381,13 +392,12 @@ export function apiGetStaffServices() {
 }
 
 export async function apiUploadImage(file: File): Promise<string> {
-  const token = getAuthToken();
   const formData = new FormData();
   formData.append("image", file);
 
   const res = await fetch(`${API_URL}/api/uploads/image`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
     body: formData,
   });
 

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from "express";
 import path from "path";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import serviceRoutes from "../routers/serviceRoutes";
 import authRoutes from "../routers/authRoutes";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
@@ -25,6 +26,7 @@ app.use(cors({
 
 const PORT = process.env.PORT || 3000;
 
+app.use(cookieParser());
 app.use(express.json());
 
 // Fichiers uploadés servis en statique

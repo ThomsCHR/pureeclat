@@ -15,6 +15,8 @@ import ServicesListPage from "./pages/ServicesListPage";
 import AddressesPage from "./pages/AddressesPage";
 import ArticlePage from "./pages/ArticlePage";
 import PlanningPage from "./pages/PlanningPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 
 
@@ -40,6 +42,8 @@ function App() {
         <Route path="/adresses" element={<AddressesPage />} />
         <Route path="/articles/:slug" element={<ArticlePage />} />
         <Route path="/planning" element={<PlanningPage />} />
+        <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+        <Route path="/reinitialisation-mot-de-passe" element={<ResetPasswordPage />} />
         
       </Routes>
     </BrowserRouter>

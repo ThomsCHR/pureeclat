@@ -20,15 +20,13 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies?.authToken;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     return res
       .status(401)
       .json({ message: "Token d'authentification manquant." });
   }
-
-  const token = authHeader.substring("Bearer ".length);
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
