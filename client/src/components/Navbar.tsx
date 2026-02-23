@@ -20,6 +20,7 @@ export default function Navbar() {
   const isStaff = isAdmin || user?.role === "ESTHETICIENNE" || user?.role === "SUPERADMIN";
 
   const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(true);
     setTimeout(() => {
       navigate("/");
