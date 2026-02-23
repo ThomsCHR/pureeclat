@@ -1,8 +1,7 @@
-import { Router, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
-import type { AuthRequest } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -35,7 +34,7 @@ router.post(
   authMiddleware,
   requireAdmin,
   upload.single("image"),
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
         res.status(400).json({ message: "Aucun fichier reçu." });
