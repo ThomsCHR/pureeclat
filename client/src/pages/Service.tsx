@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   apiGetServiceBySlug,
   apiUpdateService,
+  apiUploadImage,
   type ServiceApi,
 } from "../api/apiClient";
 
@@ -13,6 +14,7 @@ type EditFormState = {
   description: string;
   durationMinutes: string;
   priceEuros: string;
+  imageUrl: string;
 };
 
 export default function ServicePage() {
@@ -30,6 +32,13 @@ export default function ServicePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<EditFormState | null>(null);
+
+  // gestion image dans le panneau d'édition
+  const [imageTab, setImageTab] = useState<"current" | "file" | "url">("current");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!slug) {
@@ -51,10 +60,9 @@ export default function ServicePage() {
           name: data.name ?? "",
           shortDescription: data.shortDescription ?? "",
           description: data.description ?? "",
-          durationMinutes: data.durationMinutes
-            ? String(data.durationMinutes)
-            : "",
+          durationMinutes: data.durationMinutes ? String(data.durationMinutes) : "",
           priceEuros: data.priceCents ? String(data.priceCents / 100) : "",
+          imageUrl: data.imageUrl ?? "",
         });
       } catch (err) {
         console.error(err);
@@ -121,20 +129,40 @@ export default function ServicePage() {
       setSaving(true);
       setError(null);
 
+      // Résoudre l'URL finale de l'image
+      let finalImageUrl: string | null | undefined = undefined; // undefined = pas de changement
+      if (imageTab === "current") {
+        // On garde l'image actuelle — pas besoin d'envoyer imageUrl
+      } else if (imageTab === "url") {
+        finalImageUrl = form.imageUrl.trim() || null;
+      } else if (imageTab === "file") {
+        if (imageFile) {
+          setUploading(true);
+          try {
+            finalImageUrl = await apiUploadImage(imageFile);
+          } finally {
+            setUploading(false);
+          }
+        } else {
+          // tab file ouvert mais aucun fichier → on supprime l'image
+          finalImageUrl = null;
+        }
+      }
+
       const updated = await apiUpdateService(service.id, {
         name: form.name.trim() || service.name,
-        shortDescription:
-          form.shortDescription.trim() === ""
-            ? null
-            : form.shortDescription.trim(),
-        description:
-          form.description.trim() === "" ? null : form.description.trim(),
+        shortDescription: form.shortDescription.trim() === "" ? null : form.shortDescription.trim(),
+        description: form.description.trim() === "" ? null : form.description.trim(),
         durationMinutes,
         priceCents,
+        ...(finalImageUrl !== undefined ? { imageUrl: finalImageUrl } : {}),
       });
 
       setService(updated);
       setIsEditing(false);
+      setImageTab("current");
+      setImageFile(null);
+      setImagePreview(null);
     } catch (err) {
       console.error(err);
       setError(
@@ -153,12 +181,14 @@ export default function ServicePage() {
       name: service.name ?? "",
       shortDescription: service.shortDescription ?? "",
       description: service.description ?? "",
-      durationMinutes: service.durationMinutes
-        ? String(service.durationMinutes)
-        : "",
+      durationMinutes: service.durationMinutes ? String(service.durationMinutes) : "",
       priceEuros: service.priceCents ? String(service.priceCents / 100) : "",
+      imageUrl: service.imageUrl ?? "",
     });
     setIsEditing(false);
+    setImageTab("current");
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   if (loading) {
@@ -449,6 +479,110 @@ export default function ServicePage() {
                 </div>
               </div>
 
+              {/* Image */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">Image</label>
+
+                {/* Onglets */}
+                <div className="flex overflow-hidden rounded-xl border border-slate-200 mb-3 text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => { setImageTab("current"); setImageFile(null); setImagePreview(null); }}
+                    className={`flex-1 py-2 transition-colors ${imageTab === "current" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    Image actuelle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setImageTab("file"); }}
+                    className={`flex-1 py-2 transition-colors ${imageTab === "file" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    Mon appareil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setImageTab("url"); setImageFile(null); setImagePreview(null); }}
+                    className={`flex-1 py-2 transition-colors ${imageTab === "url" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    URL
+                  </button>
+                </div>
+
+                {imageTab === "current" && (
+                  <div>
+                    {service.imageUrl ? (
+                      <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                        <img src={service.imageUrl} alt={service.name} className="w-full h-40 object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => { setImageTab("file"); }}
+                          className="absolute bottom-2 right-2 rounded-full bg-black/60 text-white text-xs px-3 py-1 hover:bg-black"
+                        >
+                          Remplacer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setImageTab("url"); setForm((p) => p ? { ...p, imageUrl: "" } : p); }}
+                          className="absolute bottom-2 left-2 rounded-full bg-rose-600/80 text-white text-xs px-3 py-1 hover:bg-rose-700"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 py-2">Aucune image — choisissez un onglet pour en ajouter une.</p>
+                    )}
+                  </div>
+                )}
+
+                {imageTab === "file" && (
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setImageFile(file);
+                        setImagePreview(URL.createObjectURL(file));
+                      }}
+                      className="hidden"
+                    />
+                    {imagePreview ? (
+                      <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                        <img src={imagePreview} alt="Aperçu" className="w-full h-40 object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                          className="absolute top-2 right-2 rounded-full bg-black/60 text-white text-xs px-2 py-1 hover:bg-black"
+                        >
+                          Changer
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full rounded-xl border-2 border-dashed border-slate-200 py-6 text-sm text-slate-400 hover:border-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        Cliquer pour choisir une image
+                        <p className="mt-1 text-xs text-slate-300">JPG, PNG ou WebP · max 5 Mo</p>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {imageTab === "url" && (
+                  <input
+                    type="text"
+                    placeholder="https://… ou /images/soins/mon-soin.jpg"
+                    value={form.imageUrl}
+                    onChange={(e) => setForm((p) => p ? { ...p, imageUrl: e.target.value } : p)}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                  />
+                )}
+              </div>
+
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -459,12 +593,10 @@ export default function ServicePage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || uploading}
                   className="rounded-full bg-black px-5 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-60"
                 >
-                  {saving
-                    ? "Enregistrement..."
-                    : "Enregistrer les modifications"}
+                  {uploading ? "Upload…" : saving ? "Enregistrement…" : "Enregistrer les modifications"}
                 </button>
               </div>
             </form>

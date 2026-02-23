@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -7,9 +7,11 @@ import {
   apiUpdateStaffAppointment,
   apiDeleteStaffAppointment,
   apiGetStaffServices,
+  apiSearchClients,
   type StaffPractitionerApi,
   type StaffAppointmentApi,
   type StaffServiceApi,
+  type ClientSearchResultApi,
 } from "../api/apiClient";
 
 const INSTITUTES = [
@@ -71,6 +73,13 @@ export default function PlanningPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Recherche client existant
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientSuggestions, setClientSuggestions] = useState<ClientSearchResultApi[]>([]);
+  const [selectedClient, setSelectedClient] = useState<ClientSearchResultApi | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Modale édition
   const [editModal, setEditModal] = useState<StaffAppointmentApi | null>(null);
   const [editForm, setEditForm] = useState({ serviceId: "", notes: "" });
@@ -130,6 +139,58 @@ export default function PlanningPage() {
     });
     setForm({ serviceId: "", clientFirstName: "", clientLastName: "", clientPhone: "", clientEmail: "", notes: "" });
     setFormError(null);
+    setClientSearch("");
+    setClientSuggestions([]);
+    setSelectedClient(null);
+  }
+
+  function handleClientSearchChange(value: string) {
+    setClientSearch(value);
+    setSelectedClient(null);
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (value.trim().length < 1) {
+      setClientSuggestions([]);
+      return;
+    }
+
+    searchTimeout.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const { clients } = await apiSearchClients(value.trim());
+        setClientSuggestions(clients);
+      } catch {
+        setClientSuggestions([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }
+
+  function selectExistingClient(c: ClientSearchResultApi) {
+    setSelectedClient(c);
+    setClientSearch(`${c.firstName} ${c.lastName}`);
+    setClientSuggestions([]);
+    setForm((prev) => ({
+      ...prev,
+      clientFirstName: c.firstName,
+      clientLastName: c.lastName,
+      clientPhone: c.phone ?? "",
+      clientEmail: c.email.endsWith("@walkin.pureeclat.fr") ? "" : c.email,
+    }));
+  }
+
+  function clearSelectedClient() {
+    setSelectedClient(null);
+    setClientSearch("");
+    setForm((prev) => ({
+      ...prev,
+      clientFirstName: "",
+      clientLastName: "",
+      clientPhone: "",
+      clientEmail: "",
+    }));
   }
 
   function openEditModal(appt: StaffAppointmentApi) {
@@ -253,85 +314,115 @@ export default function PlanningPage() {
         ) : (
           /* Grille planning */
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="w-16 py-3 px-3 text-left text-xs font-medium text-slate-400">
+                <tr className="border-b-2 border-slate-200 bg-slate-50">
+                  <th className="w-20 py-4 px-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 sticky left-0 bg-slate-50">
                     Heure
                   </th>
                   {practitioners.map((p) => (
                     <th
                       key={p.id}
-                      className="py-3 px-4 text-left text-xs font-semibold text-slate-800"
+                      className="min-w-[180px] py-4 px-4 text-left"
                     >
-                      {p.firstName} {p.lastName}
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 shrink-0">
+                          {p.firstName[0]}{p.lastName[0]}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-800">
+                          {p.firstName} {p.lastName}
+                        </span>
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {TIME_SLOTS.map((slot) => (
-                  <tr
-                    key={slot}
-                    className={`border-b border-slate-100 ${
-                      slot.endsWith(":00") ? "bg-slate-50/50" : ""
-                    }`}
-                  >
-                    <td className="py-1.5 px-3 text-xs font-medium text-slate-400 whitespace-nowrap">
-                      {slot}
-                    </td>
-                    {practitioners.map((p) => {
-                      const appt = getAppointmentAt(p.id, slot);
-                      const isStart = isSlotStart(p.id, slot);
+                {TIME_SLOTS.map((slot) => {
+                  const isFullHour = slot.endsWith(":00");
+                  return (
+                    <tr
+                      key={slot}
+                      className={`${
+                        isFullHour
+                          ? "border-t border-slate-200 bg-slate-50/60"
+                          : "border-t border-slate-100"
+                      }`}
+                    >
+                      <td className={`py-3 px-4 whitespace-nowrap sticky left-0 ${
+                        isFullHour
+                          ? "bg-slate-50/60 text-sm font-semibold text-slate-600"
+                          : "bg-white text-xs text-slate-400"
+                      }`}>
+                        {slot}
+                      </td>
+                      {practitioners.map((p) => {
+                        const appt = getAppointmentAt(p.id, slot);
+                        const isStart = isSlotStart(p.id, slot);
 
-                      if (appt && !isStart) {
-                        return <td key={p.id} className="py-1.5 px-2 bg-amber-50" />;
-                      }
+                        if (appt && !isStart) {
+                          return (
+                            <td
+                              key={p.id}
+                              className="py-0 px-2 bg-amber-50 border-l border-amber-100"
+                            />
+                          );
+                        }
 
-                      if (appt && isStart) {
-                        return (
-                          <td key={p.id} className="py-1.5 px-2">
-                            <button
-                              onClick={() => openEditModal(appt)}
-                              className="w-full text-left rounded-xl bg-amber-100 border border-amber-200 px-3 py-1.5 hover:bg-amber-200 transition-colors"
-                            >
-                              <p className="text-xs font-semibold text-amber-900 leading-tight">
-                                {appt.client.firstName} {appt.client.lastName}
-                              </p>
-                              <p className="text-[10px] text-amber-700">
-                                {appt.service.name}
-                              </p>
-                              <p className="text-[10px] text-amber-600">
-                                {toLocalTime(appt.startAt)} – {toLocalTime(appt.endAt)}
-                              </p>
-                              {appt.notes && (
-                                <p className="mt-0.5 text-[10px] italic text-amber-600 truncate max-w-[140px]">
-                                  {appt.notes}
+                        if (appt && isStart) {
+                          return (
+                            <td key={p.id} className="py-1.5 px-2 border-l border-slate-100">
+                              <button
+                                onClick={() => openEditModal(appt)}
+                                className="w-full text-left rounded-xl bg-amber-100 border border-amber-200 px-3 py-2.5 hover:bg-amber-200 transition-colors shadow-sm"
+                              >
+                                <p className="text-sm font-semibold text-amber-900 leading-tight">
+                                  {appt.client.firstName} {appt.client.lastName}
                                 </p>
-                              )}
+                                <p className="mt-0.5 text-xs text-amber-700">
+                                  {appt.service.name}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-amber-500 font-medium">
+                                  {toLocalTime(appt.startAt)} – {toLocalTime(appt.endAt)}
+                                </p>
+                                {appt.client.phone && (
+                                  <p className="mt-0.5 text-[11px] text-amber-500">
+                                    {appt.client.phone}
+                                  </p>
+                                )}
+                                {appt.notes && (
+                                  <p className="mt-1 text-[11px] italic text-amber-600 truncate max-w-[160px] border-t border-amber-200 pt-1">
+                                    {appt.notes}
+                                  </p>
+                                )}
+                              </button>
+                            </td>
+                          );
+                        }
+
+                        return (
+                          <td key={p.id} className="py-1.5 px-2 border-l border-slate-100">
+                            <button
+                              onClick={() => openModal(p.id, `${p.firstName} ${p.lastName}`, slot)}
+                              className={`w-full rounded-lg border border-dashed py-2.5 text-xs transition-colors
+                                ${isFullHour
+                                  ? "border-slate-300 text-slate-300 hover:border-slate-500 hover:text-slate-500 hover:bg-slate-50"
+                                  : "border-slate-200 text-slate-200 hover:border-slate-400 hover:text-slate-400"
+                                }`}
+                            >
+                              +
                             </button>
                           </td>
                         );
-                      }
-
-                      return (
-                        <td key={p.id} className="py-1.5 px-2">
-                          <button
-                            onClick={() => openModal(p.id, `${p.firstName} ${p.lastName}`, slot)}
-                            className="w-full rounded-lg border border-dashed border-slate-200 py-1 text-[11px] text-slate-300 hover:border-slate-400 hover:text-slate-500 transition-colors"
-                          >
-                            +
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
             {practitioners.length === 0 && (
-              <div className="py-10 text-center text-sm text-slate-400">
+              <div className="py-16 text-center text-sm text-slate-400">
                 Aucune esthéticienne trouvée pour cet institut.
               </div>
             )}
@@ -477,18 +568,77 @@ export default function PlanningPage() {
                 <label className="block text-xs font-semibold text-slate-700 mb-2">
                   Client <span className="text-rose-500">*</span>
                 </label>
+
+                {/* Recherche client existant */}
+                {!selectedClient ? (
+                  <div className="relative mb-3">
+                    <input
+                      type="text"
+                      placeholder="Rechercher un client existant (nom, téléphone…)"
+                      value={clientSearch}
+                      onChange={(e) => handleClientSearchChange(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900"
+                    />
+                    {searchLoading && (
+                      <span className="absolute right-3 top-2.5 text-xs text-slate-400">…</span>
+                    )}
+                    {clientSuggestions.length > 0 && (
+                      <ul className="absolute z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                        {clientSuggestions.map((c) => (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              onClick={() => selectExistingClient(c)}
+                              className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors"
+                            >
+                              <span className="text-sm font-medium text-slate-900">
+                                {c.firstName} {c.lastName}
+                              </span>
+                              {c.phone && (
+                                <span className="ml-2 text-xs text-slate-500">{c.phone}</span>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {clientSearch.length >= 1 && !searchLoading && clientSuggestions.length === 0 && (
+                      <p className="mt-1 text-xs text-slate-400">Aucun client trouvé — remplir manuellement ci-dessous.</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mb-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900">
+                        {selectedClient.firstName} {selectedClient.lastName}
+                      </p>
+                      <p className="text-xs text-emerald-700">{selectedClient.phone}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearSelectedClient}
+                      className="text-xs text-emerald-600 hover:text-emerald-900 underline"
+                    >
+                      Changer
+                    </button>
+                  </div>
+                )}
+
+                {/* Champs manuels (désactivés si client sélectionné) */}
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     placeholder="Prénom *"
                     value={form.clientFirstName}
                     onChange={(e) => setForm({ ...form, clientFirstName: e.target.value })}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900"
+                    disabled={!!selectedClient}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900 disabled:opacity-50"
                   />
                   <input
                     placeholder="Nom *"
                     value={form.clientLastName}
                     onChange={(e) => setForm({ ...form, clientLastName: e.target.value })}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900"
+                    disabled={!!selectedClient}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900 disabled:opacity-50"
                   />
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
@@ -496,13 +646,15 @@ export default function PlanningPage() {
                     placeholder="Téléphone *"
                     value={form.clientPhone}
                     onChange={(e) => setForm({ ...form, clientPhone: e.target.value })}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900"
+                    disabled={!!selectedClient}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900 disabled:opacity-50"
                   />
                   <input
                     placeholder="Email (optionnel)"
                     value={form.clientEmail}
                     onChange={(e) => setForm({ ...form, clientEmail: e.target.value })}
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900"
+                    disabled={!!selectedClient}
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-900 disabled:opacity-50"
                   />
                 </div>
               </div>

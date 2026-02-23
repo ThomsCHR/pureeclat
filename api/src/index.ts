@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from "express";
-
+import path from "path";
 import cors from "cors";
 import serviceRoutes from "../routers/serviceRoutes";
 import authRoutes from "../routers/authRoutes";
@@ -10,6 +10,7 @@ import availabilityRoutes from "../routers/availabilityRoutes";
 import categoryRoutes from "../routers/categoryRoutes";
 import userRoutes from "../routers/userRoutes";
 import staffRoutes from "../routers/staffRoutes";
+import uploadRoutes from "../routers/uploadRoutes";
 import { errorHandler } from "../middleware/errorMiddleware";
 
 
@@ -26,6 +27,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Fichiers uploadés servis en statique
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 app.use("/api/services", serviceRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/availability", availabilityRoutes);
@@ -33,6 +37,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.get("/api/me", authMiddleware, (req, res) => {
   // @ts-ignore (ou mieux : typage avec AuthRequest)

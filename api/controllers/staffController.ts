@@ -279,6 +279,65 @@ export const deleteStaffAppointment = async (
   }
 };
 
+// GET /api/staff/clients/search?q=
+export const searchClients = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    requireStaff(req);
+
+    const q = ((req.query.q as string) ?? "").trim();
+    if (q.length < 1) {
+      res.json({ clients: [] });
+      return;
+    }
+
+    const digits = q.replace(/\D/g, "");
+    // Pour 1-2 caractères : startsWith (prénom ou nom commence par)
+    // Pour 3+ caractères : contains (recherche partielle dans tout le nom)
+    const useStartsWith = q.length <= 2;
+
+    const clients = await prisma.user.findMany({
+      where: {
+        role: UserRole.CLIENT,
+        isActive: true,
+        OR: [
+          {
+            firstName: useStartsWith
+              ? { startsWith: q, mode: "insensitive" }
+              : { contains: q, mode: "insensitive" },
+          },
+          {
+            lastName: useStartsWith
+              ? { startsWith: q, mode: "insensitive" }
+              : { contains: q, mode: "insensitive" },
+          },
+          ...(digits.length >= 4
+            ? [{ phone: { contains: digits, mode: "insensitive" as const } }]
+            : []),
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        email: true,
+      },
+      take: 8,
+      orderBy: { lastName: "asc" },
+    });
+
+    // Filtrer les comptes walk-in (email fake) sauf si pas d'autres résultats
+    const real = clients.filter((c) => !c.email.endsWith("@walkin.pureeclat.fr"));
+    res.json({ clients: real.length > 0 ? real : clients });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // GET /api/staff/services  (liste légère pour la modale)
 export const getStaffServices = async (
   req: AuthRequest,

@@ -380,6 +380,40 @@ export function apiGetStaffServices() {
   return request<{ services: StaffServiceApi[] }>("/api/staff/services");
 }
 
+export async function apiUploadImage(file: File): Promise<string> {
+  const token = getAuthToken();
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(`${API_URL}/api/uploads/image`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(
+      (data as { message?: string })?.message ?? `Erreur upload (${res.status})`
+    );
+  }
+  return `${API_URL}${(data as { url: string }).url}`;
+}
+
+export type ClientSearchResultApi = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string;
+};
+
+export function apiSearchClients(q: string) {
+  return request<{ clients: ClientSearchResultApi[] }>(
+    `/api/staff/clients/search?q=${encodeURIComponent(q)}`
+  );
+}
+
 // Supprimer un utilisateur (admin)
 export function apiDeleteUser(id: number) {
   return request<{ message: string }>(`/api/users/${id}`, {
