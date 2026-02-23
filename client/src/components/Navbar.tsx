@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 const sections = [
   { id: "solutions", label: "Rituels" },
   { id: "addresses", label: "Adresses" },
-  { id: "about", label: "À propos" },
   { id: "guides", label: "Nos guides" },
   { id: "pricing", label: "Tarifs" },
 ];
