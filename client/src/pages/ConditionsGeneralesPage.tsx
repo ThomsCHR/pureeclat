@@ -65,7 +65,7 @@ export default function ConditionsGeneralesPage() {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_left,_#f9b6c8_0,_transparent_60%)]" />
         <div className="relative max-w-3xl mx-auto">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.length > 1 ? navigate(-1) : navigate("/")}
             className="inline-flex items-center gap-2 text-xs text-white/60 hover:text-white transition mb-8"
           >
             ← Retour
