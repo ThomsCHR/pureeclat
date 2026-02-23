@@ -13,6 +13,7 @@ import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminUserAppointmentsPage from "./pages/AdminUserAppointmentsPage";
 import ServicesListPage from "./pages/ServicesListPage";
 import AddressesPage from "./pages/AddressesPage";
+import ArticlePage from "./pages/ArticlePage";
 
 
 
@@ -36,6 +37,7 @@ function App() {
         <Route path="/admin/users/:id/appointments" element={<AdminUserAppointmentsPage />} />
         <Route path="/soins" element={<ServicesListPage />} />
         <Route path="/adresses" element={<AddressesPage />} />
+        <Route path="/articles/:slug" element={<ArticlePage />} />
         
       </Routes>
     </BrowserRouter>

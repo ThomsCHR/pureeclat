@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 type Address = {
   id: string;
@@ -11,6 +12,7 @@ type Address = {
   email: string;
   openingHours: string[];
   imageUrl: string;
+  mapUrl: string;
 };
 
 const ADDRESSES: Address[] = [
@@ -25,6 +27,7 @@ const ADDRESSES: Address[] = [
     phone: "+33 1 23 45 67 89",
     email: "paris16@pureeclat.fr",
     imageUrl: "/images/Paris.png",
+    mapUrl: "https://www.openstreetmap.org/export/embed.html?bbox=2.264%2C48.8537%2C2.284%2C48.8737&layer=mapnik&marker=48.8637%2C2.274",
     openingHours: [
       "Lundi – Vendredi : 10h00 – 19h30",
       "Samedi : 10h00 – 18h00",
@@ -42,6 +45,7 @@ const ADDRESSES: Address[] = [
     phone: "+33 4 56 78 90 12",
     email: "lyon@pureeclat.fr",
     imageUrl: "/images/Lyon.png",
+    mapUrl: "https://www.openstreetmap.org/export/embed.html?bbox=4.8217%2C45.7436%2C4.8417%2C45.7636&layer=mapnik&marker=45.7536%2C4.8317",
     openingHours: [
       "Lundi – Vendredi : 9h30 – 19h00",
       "Samedi : 10h00 – 18h30",
@@ -59,6 +63,7 @@ const ADDRESSES: Address[] = [
     phone: "+33 4 91 23 45 67",
     email: "marseille@pureeclat.fr",
     imageUrl: "/images/Marseille.png",
+    mapUrl: "https://www.openstreetmap.org/export/embed.html?bbox=5.3711%2C43.2865%2C5.3911%2C43.3065&layer=mapnik&marker=43.2965%2C5.3811",
     openingHours: [
       "Lundi – Vendredi : 10h00 – 19h00",
       "Samedi : 10h00 – 18h00",
@@ -68,7 +73,19 @@ const ADDRESSES: Address[] = [
 ];
 
 export default function AddressesPage() {
-  const [selected, setSelected] = useState<Address | null>(ADDRESSES[0]);
+  const [searchParams] = useSearchParams();
+  const [selected, setSelected] = useState<Address | null>(() => {
+    const city = searchParams.get("city");
+    return ADDRESSES.find((a) => a.id === city) ?? ADDRESSES[0];
+  });
+
+  useEffect(() => {
+    const city = searchParams.get("city");
+    if (city) {
+      const found = ADDRESSES.find((a) => a.id === city);
+      if (found) setSelected(found);
+    }
+  }, [searchParams]);
 
   return (
     // on ajoute du padding-top pour dégager la navbar
@@ -180,28 +197,22 @@ export default function AddressesPage() {
               </div>
             </div>
 
-            {/* Google Maps fictif */}
+            {/* Carte OpenStreetMap */}
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
                 Localisation (fictive)
               </h3>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                {/* Bloc qui imite une map */}
-                <div className="relative aspect-[4/3]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#E5EEFF,_#C7D7FF,_#A5B9FF)]" />
-                  <div className="absolute inset-4 rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm" />
-                  <div className="absolute bottom-4 left-4 rounded-full bg-slate-900/90 px-3 py-1 text-[11px] font-medium text-white shadow">
-                    Ici, une carte Google Maps intégrée
-                  </div>
-                  <div className="absolute right-4 top-4 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-700 shadow">
-                    {selected.city}
-                  </div>
-                </div>
+              <div className="overflow-hidden rounded-2xl border border-slate-200">
+                <iframe
+                  key={selected.id}
+                  src={selected.mapUrl}
+                  width="100%"
+                  height="300"
+                  className="block"
+                  loading="lazy"
+                  title={`Carte ${selected.city}`}
+                />
               </div>
-
-              <p className="mt-3 text-[11px] text-slate-500">
-                La carte ci-dessus est un visuel fictif.
-              </p>
             </div>
           </section>
         )}

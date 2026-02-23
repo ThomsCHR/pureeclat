@@ -333,22 +333,14 @@ export default function Home() {
           {/* --- TABLEAU DES ADRESSES --- */}
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {[
-              {
-                city: "Paris 16",
-                img: "/images/Paris.png",
-              },
-              {
-                city: "Lyon",
-                img: "/images/Lyon.png",
-              },
-              {
-                city: "Marseille",
-                img: "/images/Marseille.png",
-              },
+              { city: "Paris 16", id: "paris16", img: "/images/Paris.png" },
+              { city: "Lyon",     id: "lyon",    img: "/images/Lyon.png" },
+              { city: "Marseille",id: "marseille",img: "/images/Marseille.png" },
             ].map((loc) => (
               <div
                 key={loc.city}
-                className="space-y-3 rounded-2xl bg-slate-50 p-5 shadow-sm shadow-slate-100"
+                onClick={() => navigate(`/adresses?city=${loc.id}`)}
+                className="group cursor-pointer space-y-3 rounded-2xl bg-slate-50 p-5 shadow-sm shadow-slate-100 hover:shadow-md hover:bg-slate-100 transition-all"
               >
                 <div className="h-32 overflow-hidden rounded-xl bg-slate-200">
                   <img
@@ -357,9 +349,10 @@ export default function Home() {
                     className="h-full w-full object-cover"
                   />
                 </div>
-
                 <h3 className="text-lg font-semibold">{loc.city}</h3>
-                <p className="text-sm text-slate-600">Adresse fictive.</p>
+                <p className="text-sm text-slate-500 group-hover:text-amber-700 transition-colors">
+                  Voir l'adresse →
+                </p>
               </div>
             ))}
           </div>
@@ -421,27 +414,33 @@ export default function Home() {
               {
                 title: "Choisir son rituel visage",
                 text: "Découvrez comment identifier votre type de peau et sélectionner les soins les mieux adaptés pour optimiser l’éclat, l’hydratation et l’équilibre de votre peau au quotidien.",
+                slug: "choisir-son-rituel-visage",
               },
               {
                 title: "Préparer sa première visite",
                 text: "Apprenez comment se déroule une séance en institut, quelles questions vous seront posées et comment vous préparer pour profiter pleinement de votre soin.",
+                slug: "preparer-sa-premiere-visite",
               },
               {
                 title: "Prolonger l’éclat après un soin",
                 text: "Adoptez les bons gestes pour maintenir les bienfaits de votre soin : hydratation, protection, routine douce et habitudes à éviter dans les jours qui suivent.",
+                slug: "prolonger-leclat-apres-un-soin",
               },
-            ].map(({ title, text }) => (
+            ].map(({ title, text, slug }) => (
               <article
                 key={title}
-                className="space-y-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-700 shadow-sm shadow-slate-100"
+                onClick={() => navigate(`/articles/${slug}`)}
+                className="group flex flex-col justify-between space-y-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-700 shadow-sm shadow-slate-100 cursor-pointer hover:shadow-md hover:bg-slate-100 transition-all"
               >
-                <h3 className="text-base font-semibold text-slate-900">
-                  {title}
-                </h3>
-                <p>{text}</p>
-                <button className="text-xs font-semibold text-slate-900 underline underline-offset-4">
-                  Lire l&apos;article
-                </button>
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {title}
+                  </h3>
+                  <p>{text}</p>
+                </div>
+                <span className="mt-2 inline-block text-xs font-semibold text-slate-900 underline underline-offset-4 group-hover:text-amber-700 transition-colors">
+                  Lire l&apos;article →
+                </span>
               </article>
             ))}
           </div>
