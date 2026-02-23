@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { apiRegister } from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -258,12 +258,13 @@ export default function RegisterPage() {
               />
               <label htmlFor="cgu">
                 J&apos;accepte les{" "}
-                <button
-                  type="button"
+                <Link
+                  to="/conditions-generales"
+                  target="_blank"
                   className="underline underline-offset-2 text-slate-800 hover:text-black"
                 >
                   conditions générales
-                </button>{" "}
+                </Link>{" "}
                 et la politique de confidentialité de l&apos;institut.
               </label>
             </div>

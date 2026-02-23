@@ -17,6 +17,7 @@ import ArticlePage from "./pages/ArticlePage";
 import PlanningPage from "./pages/PlanningPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ConditionsGeneralesPage from "./pages/ConditionsGeneralesPage";
 
 
 
@@ -44,6 +45,7 @@ function App() {
         <Route path="/planning" element={<PlanningPage />} />
         <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
         <Route path="/reinitialisation-mot-de-passe" element={<ResetPasswordPage />} />
+        <Route path="/conditions-generales" element={<ConditionsGeneralesPage />} />
         
       </Routes>
     </BrowserRouter>
