@@ -5,10 +5,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "npm run prisma:generate && tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/src/index.js",
-    "prisma:migrate": "prisma db push",
-    "prisma:generate": "prisma generate"
+    "deploy": "prisma db push && prisma generate && tsc"
   },
   "type": "commonjs",
   "dependencies": {
