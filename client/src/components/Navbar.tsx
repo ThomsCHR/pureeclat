@@ -323,6 +323,18 @@ export default function Navbar() {
                   ))}
               </div>
 
+              {/* Planning (staff uniquement) */}
+              {isStaff && (
+                <div className="pt-2 border-t border-white/10">
+                  <button
+                    onClick={() => { setMobileOpen(false); navigate("/planning"); }}
+                    className="block w-full text-left text-sm text-rose-300 hover:text-rose-200 font-medium"
+                  >
+                    Planning
+                  </button>
+                </div>
+              )}
+
               {/* CTA + compte */}
               <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
                 <button

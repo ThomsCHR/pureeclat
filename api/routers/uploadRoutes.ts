@@ -29,19 +29,20 @@ const upload = multer({
   },
 });
 
+type RequestWithFile = Request & { file?: { filename: string; mimetype: string; size: number } };
+
 router.post(
   "/image",
   authMiddleware,
   requireAdmin,
   upload.single("image"),
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: RequestWithFile, res: Response, next: NextFunction) => {
     try {
-      const file = (req as Request & { file?: Express.Multer.File }).file;
-      if (!file) {
+      if (!req.file) {
         res.status(400).json({ message: "Aucun fichier reçu." });
         return;
       }
-      const url = `/uploads/${file.filename}`;
+      const url = `/uploads/${req.file.filename}`;
       res.json({ url });
     } catch (err) {
       next(err);
