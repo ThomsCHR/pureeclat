@@ -171,7 +171,7 @@ export default function PlanningPage() {
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stats semaine / mois
-  const [stats, setStats] = useState<{ week: { count: number; priceCents: number }; month: { count: number; priceCents: number } } | null>(null);
+  const [stats, setStats] = useState<StatsShape>(null);
 
   // Modale édition
   const [editModal, setEditModal] = useState<StaffAppointmentApi | null>(null);
