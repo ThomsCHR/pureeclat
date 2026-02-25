@@ -473,6 +473,13 @@ export function apiCreateUser(body: {
   });
 }
 
+export function apiCreatePaymentIntent(serviceId: number) {
+  return request<{ clientSecret: string }>("/api/payments/create-intent", {
+    method: "POST",
+    body: JSON.stringify({ serviceId }),
+  });
+}
+
 // Supprimer un utilisateur (admin)
 export function apiDeleteUser(id: number) {
   return request<{ message: string }>(`/api/users/${id}`, {

@@ -17,6 +17,7 @@ import categoryRoutes    from "../routers/categoryRoutes";
 import userRoutes        from "../routers/userRoutes";
 import staffRoutes       from "../routers/staffRoutes";
 import uploadRoutes      from "../routers/uploadRoutes";
+import paymentRoutes     from "../routers/paymentRoutes";
 
 // Middlewares personnalisés
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
@@ -60,6 +61,7 @@ app.use("/api/categories",   categoryRoutes);
 app.use("/api/users",        userRoutes);
 app.use("/api/staff",        staffRoutes);
 app.use("/api/uploads",      uploadRoutes);
+app.use("/api/payments",     paymentRoutes);
 
 // ─── Routes utilitaires ────────────────────────────────────────────────────────
 

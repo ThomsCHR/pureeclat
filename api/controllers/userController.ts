@@ -31,7 +31,6 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new AppError(409, "Un compte existe déjà avec cette adresse e-mail.");
 
-    // Mot de passe fourni ou généré aléatoirement (temporaire)
     const rawPassword = password?.trim() || crypto.randomBytes(12).toString("hex");
     const passwordHash = await argon2.hash(rawPassword);
 
@@ -57,11 +56,10 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
       },
     });
 
-    // Générer un token de définition de mot de passe et envoyer l'email
     try {
       await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
       const token = crypto.randomBytes(32).toString("hex");
-      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72h
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
       await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
 
       const setPasswordLink = `${CLIENT_URL}/reinitialisation-mot-de-passe?token=${token}`;
@@ -92,7 +90,6 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
       });
     } catch (emailErr) {
       console.error("Erreur envoi email création compte:", emailErr);
-      // On ne bloque pas la réponse si l'email échoue
     }
 
     return res.status(201).json({ user });
@@ -189,8 +186,7 @@ export async function updateUserRole(req: AuthRequest, res: Response, next: Next
       throw new AppError(403, "Vous ne pouvez pas modifier un SUPERADMIN.");
     }
 
-    const isChangingAdminState =
-      targetUser.role === UserRole.ADMIN || role === UserRole.ADMIN;
+    const isChangingAdminState = targetUser.role === UserRole.ADMIN || role === UserRole.ADMIN;
 
     if (isChangingAdminState && req.user?.role !== UserRole.SUPERADMIN) {
       throw new AppError(403, "Seul le SUPERADMIN peut gérer les administrateurs.");
