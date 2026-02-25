@@ -151,6 +151,7 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
       shortDescription,
       description,
       imageUrl,
+      images,
       isActive,
     } = req.body as {
       name?: string;
@@ -161,6 +162,7 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
       shortDescription?: string | null;
       description?: string | null;
       imageUrl?: string | null;
+      images?: string[];
       isActive?: boolean;
     };
 
@@ -214,6 +216,7 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
     if ("shortDescription" in req.body) updateData.shortDescription = shortDescription ?? null;
     if ("description" in req.body) updateData.description = description ?? null;
     if ("imageUrl" in req.body) updateData.imageUrl = imageUrl ?? null;
+    if ("images" in req.body) updateData.images = images ?? [];
     if (typeof isActive === "boolean") updateData.isActive = isActive;
 
     if (updateData.categoryId && updateData.categoryId !== existing.categoryId) {

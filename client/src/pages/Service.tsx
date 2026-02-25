@@ -15,6 +15,7 @@ type EditFormState = {
   durationMinutes: string;
   priceEuros: string;
   imageUrl: string;
+  images: string[];
 };
 
 export default function ServicePage() {
@@ -34,11 +35,13 @@ export default function ServicePage() {
   const [form, setForm] = useState<EditFormState | null>(null);
 
   // gestion image dans le panneau d'édition
-  const [imageTab, setImageTab] = useState<"current" | "file" | "url">("current");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // image affichée dans le hero (clic thumbnail) — local uniquement
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) {
@@ -63,6 +66,7 @@ export default function ServicePage() {
           durationMinutes: data.durationMinutes ? String(data.durationMinutes) : "",
           priceEuros: data.priceCents ? String(data.priceCents / 100) : "",
           imageUrl: data.imageUrl ?? "",
+          images: data.images ?? [],
         });
       } catch (err) {
         console.error(err);
@@ -129,24 +133,24 @@ export default function ServicePage() {
       setSaving(true);
       setError(null);
 
-      // Résoudre l'URL finale de l'image
-      let finalImageUrl: string | null | undefined = undefined; // undefined = pas de changement
-      if (imageTab === "current") {
-        // On garde l'image actuelle — pas besoin d'envoyer imageUrl
-      } else if (imageTab === "url") {
-        finalImageUrl = form.imageUrl.trim() || null;
-      } else if (imageTab === "file") {
-        if (imageFile) {
-          setUploading(true);
-          try {
-            finalImageUrl = await apiUploadImage(imageFile);
-          } finally {
-            setUploading(false);
+      // Upload du nouveau fichier si besoin
+      let newImageUrl = form.imageUrl;
+      let newImages = form.images;
+      if (imageFile) {
+        setUploading(true);
+        try {
+          const uploaded = await apiUploadImage(imageFile);
+          if (!newImageUrl) {
+            newImageUrl = uploaded; // première image → principale
+          } else {
+            newImages = [...newImages, uploaded]; // sinon → galerie
           }
-        } else {
-          // tab file ouvert mais aucun fichier → on supprime l'image
-          finalImageUrl = null;
+        } finally {
+          setUploading(false);
         }
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
 
       const updated = await apiUpdateService(service.id, {
@@ -155,14 +159,14 @@ export default function ServicePage() {
         description: form.description.trim() === "" ? null : form.description.trim(),
         durationMinutes,
         priceCents,
-        ...(finalImageUrl !== undefined ? { imageUrl: finalImageUrl } : {}),
+        imageUrl: newImageUrl || null,
+        images: newImages,
       });
 
       setService(updated);
+      setPreviewUrl(null);
+      setForm((p) => p ? { ...p, imageUrl: updated.imageUrl ?? "", images: updated.images ?? [] } : p);
       setIsEditing(false);
-      setImageTab("current");
-      setImageFile(null);
-      setImagePreview(null);
     } catch (err) {
       console.error(err);
       setError(
@@ -184,9 +188,9 @@ export default function ServicePage() {
       durationMinutes: service.durationMinutes ? String(service.durationMinutes) : "",
       priceEuros: service.priceCents ? String(service.priceCents / 100) : "",
       imageUrl: service.imageUrl ?? "",
+      images: service.images ?? [],
     });
     setIsEditing(false);
-    setImageTab("current");
     setImageFile(null);
     setImagePreview(null);
   };
@@ -265,9 +269,9 @@ export default function ServicePage() {
             {/* hero full-width sur mobile */}
             <div className="-mx-4 sm:mx-0">
               <div className="overflow-hidden rounded-none sm:rounded-3xl bg-white border border-slate-200 shadow-sm">
-                {service.imageUrl ? (
+                {(previewUrl ?? service.imageUrl) ? (
                   <img
-                    src={service.imageUrl}
+                    src={previewUrl ?? service.imageUrl!}
                     alt={service.name}
                     className="w-full aspect-[4/3] md:aspect-[5/3] object-cover object-center"
                   />
@@ -279,20 +283,24 @@ export default function ServicePage() {
               </div>
             </div>
 
-            {service.imageUrl && (
-              <div className="flex gap-3">
-                <button className="h-20 w-20 overflow-hidden rounded-xl border border-slate-300 bg-white">
-                  <img
-                    src={service.imageUrl}
-                    alt={service.name}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-                <div className="h-20 w-20 rounded-xl bg-slate-100" />
-                <div className="h-20 w-20 rounded-xl bg-slate-100" />
-                <div className="h-20 w-20 rounded-xl bg-slate-100" />
-              </div>
-            )}
+            {(() => {
+              const allImages = [service.imageUrl, ...(service.images ?? [])].filter(Boolean) as string[];
+              const displayed = previewUrl ?? service.imageUrl;
+              return allImages.length > 1 ? (
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {allImages.map((url, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setPreviewUrl(url === service.imageUrl && !previewUrl ? null : url)}
+                      className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition-all ${url === displayed ? "border-slate-900" : "border-slate-200 hover:border-slate-400"}`}
+                    >
+                      <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Texte + infos */}
@@ -479,107 +487,100 @@ export default function ServicePage() {
                 </div>
               </div>
 
-              {/* Image */}
+              {/* Images */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-2">Image</label>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  Photos du soin
+                </label>
 
-                {/* Onglets */}
-                <div className="flex overflow-hidden rounded-xl border border-slate-200 mb-3 text-xs font-medium">
-                  <button
-                    type="button"
-                    onClick={() => { setImageTab("current"); setImageFile(null); setImagePreview(null); }}
-                    className={`flex-1 py-2 transition-colors ${imageTab === "current" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-                  >
-                    Image actuelle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setImageTab("file"); }}
-                    className={`flex-1 py-2 transition-colors ${imageTab === "file" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-                  >
-                    Mon appareil
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setImageTab("url"); setImageFile(null); setImagePreview(null); }}
-                    className={`flex-1 py-2 transition-colors ${imageTab === "url" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-                  >
-                    URL
-                  </button>
-                </div>
-
-                {imageTab === "current" && (
-                  <div>
-                    {service.imageUrl ? (
-                      <div className="relative rounded-xl overflow-hidden border border-slate-200">
-                        <img src={service.imageUrl} alt={service.name} className="w-full h-40 object-cover" />
+                {/* Grille des images existantes */}
+                {(form.imageUrl || form.images.length > 0) && (
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {/* Image principale */}
+                    {form.imageUrl && (
+                      <div className="relative rounded-xl overflow-hidden border-2 border-slate-900 aspect-square group">
+                        <img src={form.imageUrl} alt="Principale" className="w-full h-full object-cover" />
+                        <span className="absolute top-1 left-1 rounded-full bg-slate-900 text-white text-[10px] px-2 py-0.5">Principale</span>
                         <button
                           type="button"
-                          onClick={() => { setImageTab("file"); }}
-                          className="absolute bottom-2 right-2 rounded-full bg-black/60 text-white text-xs px-3 py-1 hover:bg-black"
+                          onClick={() => {
+                            // Promouvoir la première image de galerie, ou vider
+                            const next = form.images[0] ?? "";
+                            setForm((p) => p ? { ...p, imageUrl: next, images: p.images.slice(1) } : p);
+                          }}
+                          className="absolute top-1 right-1 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white text-xs hover:bg-rose-700"
                         >
-                          Remplacer
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setImageTab("url"); setForm((p) => p ? { ...p, imageUrl: "" } : p); }}
-                          className="absolute bottom-2 left-2 rounded-full bg-rose-600/80 text-white text-xs px-3 py-1 hover:bg-rose-700"
-                        >
-                          Supprimer
+                          ×
                         </button>
                       </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 py-2">Aucune image — choisissez un onglet pour en ajouter une.</p>
                     )}
+                    {/* Images de galerie */}
+                    {form.images.map((url, i) => (
+                      <div key={i} className="relative rounded-xl overflow-hidden border border-slate-200 aspect-square group">
+                        <img src={url} alt={`Photo ${i + 2}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Définir comme principale
+                            setForm((p) => {
+                              if (!p) return p;
+                              const newImages = p.images.filter((_, idx) => idx !== i);
+                              if (p.imageUrl) newImages.unshift(p.imageUrl);
+                              return { ...p, imageUrl: url, images: newImages };
+                            });
+                          }}
+                          className="absolute bottom-1 left-1 hidden group-hover:block rounded-full bg-slate-900/70 text-white text-[10px] px-2 py-0.5 hover:bg-slate-900"
+                        >
+                          Principale
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setForm((p) => p ? { ...p, images: p.images.filter((_, idx) => idx !== i) } : p)}
+                          className="absolute top-1 right-1 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white text-xs hover:bg-rose-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {imageTab === "file" && (
-                  <div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setImageFile(file);
-                        setImagePreview(URL.createObjectURL(file));
-                      }}
-                      className="hidden"
-                    />
-                    {imagePreview ? (
-                      <div className="relative rounded-xl overflow-hidden border border-slate-200">
-                        <img src={imagePreview} alt="Aperçu" className="w-full h-40 object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                          className="absolute top-2 right-2 rounded-full bg-black/60 text-white text-xs px-2 py-1 hover:bg-black"
-                        >
-                          Changer
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full rounded-xl border-2 border-dashed border-slate-200 py-6 text-sm text-slate-400 hover:border-slate-400 hover:text-slate-600 transition-colors"
-                      >
-                        Cliquer pour choisir une image
-                        <p className="mt-1 text-xs text-slate-300">JPG, PNG ou WebP · max 5 Mo</p>
-                      </button>
-                    )}
+                {/* Bouton ajouter + preview */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }}
+                  className="hidden"
+                />
+                {imagePreview ? (
+                  <div className="relative rounded-xl overflow-hidden border border-emerald-300 aspect-video">
+                    <img src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 rounded-full bg-emerald-600 text-white text-[10px] px-2 py-0.5">
+                      {form.imageUrl ? "Sera ajoutée à la galerie" : "Sera l'image principale"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="absolute top-2 right-2 h-6 w-6 flex items-center justify-center rounded-full bg-black/60 text-white text-xs hover:bg-black"
+                    >
+                      ×
+                    </button>
                   </div>
-                )}
-
-                {imageTab === "url" && (
-                  <input
-                    type="text"
-                    placeholder="https://… ou /images/soins/mon-soin.jpg"
-                    value={form.imageUrl}
-                    onChange={(e) => setForm((p) => p ? { ...p, imageUrl: e.target.value } : p)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full rounded-xl border-2 border-dashed border-slate-200 py-5 text-sm text-slate-400 hover:border-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    + Ajouter une photo
+                    <p className="mt-0.5 text-xs text-slate-300">JPG, PNG ou WebP · max 5 Mo</p>
+                  </button>
                 )}
               </div>
 

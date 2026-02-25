@@ -70,6 +70,7 @@ export type ServiceApi = {
   shortDescription?: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  images?: string[];
   durationMinutes?: number | null;
   priceCents?: number | null;
   category?: ServiceCategoryApi;
@@ -305,6 +306,7 @@ export function apiUpdateService(
     priceCents?: number | null;
     durationMinutes?: number | null;
     imageUrl?: string | null;
+    images?: string[];
     categoryId?: number;
     isActive?: boolean;
   }
@@ -432,7 +434,7 @@ export async function apiUploadImage(file: File): Promise<string> {
       (data as { message?: string })?.message ?? `Erreur upload (${res.status})`
     );
   }
-  return `${API_URL}${(data as { url: string }).url}`;
+  return (data as { url: string }).url;
 }
 
 export type ClientSearchResultApi = {
