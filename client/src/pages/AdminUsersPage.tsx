@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import {
   apiGetUsers,
   apiUpdateUserRole,
+  apiUpdateUserInfo,
   apiDeleteUser,
+  apiCreateUser,
   type AdminUserApi,
   type UserRoleApi,
 } from "../api/apiClient";
@@ -20,6 +22,18 @@ export default function AdminUsersPage() {
 
   // id de l'utilisateur en cours de mise à jour (pour désactiver le select)
   const [savingId, setSavingId] = useState<number | null>(null);
+
+  // modale édition infos
+  const [editUser, setEditUser] = useState<AdminUserApi | null>(null);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", phone: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // modale création client
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "" });
+  const [createSaving, setCreateSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -104,6 +118,54 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleCreateSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setCreateSaving(true);
+      setCreateError(null);
+      const { user } = await apiCreateUser({
+        firstName: createForm.firstName,
+        lastName: createForm.lastName,
+        email: createForm.email,
+        phone: createForm.phone || undefined,
+        password: createForm.password || undefined,
+      });
+      setUsers((prev) => [user, ...prev]);
+      setShowCreate(false);
+      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", password: "" });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Erreur lors de la création.");
+    } finally {
+      setCreateSaving(false);
+    }
+  };
+
+  const openEditUser = (u: AdminUserApi) => {
+    setEditUser(u);
+    setEditForm({ firstName: u.firstName, lastName: u.lastName, phone: u.phone ?? "" });
+    setEditError(null);
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    try {
+      setEditSaving(true);
+      setEditError(null);
+      const { user } = await apiUpdateUserInfo(editUser.id, {
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        phone: editForm.phone || null,
+      });
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+      setEditUser(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Erreur lors de la modification.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   // helper pour savoir si on peut éditer le rôle de cet utilisateur
   const canEditRole = (u: AdminUserApi) => {
     // Déjà en cours d'enregistrement
@@ -135,6 +197,7 @@ export default function AdminUsersPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-[#FFF5ED] px-4 py-20">
       <div className="mx-auto max-w-4xl bg-white/90 border border-[#ead8c7] shadow rounded-2xl p-6 space-y-6">
         <button
@@ -145,7 +208,16 @@ export default function AdminUsersPage() {
         </button>
 
         <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-semibold">Utilisateurs inscrits</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Utilisateurs inscrits</h1>
+            <button
+              type="button"
+              onClick={() => { setShowCreate(true); setCreateError(null); }}
+              className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              + Ajouter un client
+            </button>
+          </div>
 
           {/* 🔍 Barre de recherche */}
           <input
@@ -208,15 +280,24 @@ export default function AdminUsersPage() {
                       <option value="SUPERADMIN">Superadmin</option>
                     </select>
 
-                    {canDeleteUser(u) && (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleDeleteUser(u)}
-                        className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                        onClick={() => openEditUser(u)}
+                        className="text-xs font-medium text-slate-600 hover:text-slate-900 underline"
                       >
-                        Supprimer
+                        Modifier
                       </button>
-                    )}
+                      {canDeleteUser(u) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(u)}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -275,19 +356,24 @@ export default function AdminUsersPage() {
                           </select>
                         </td>
                         <td className="px-4 py-2 text-right">
-                          {deletable ? (
+                          <div className="flex items-center justify-end gap-3">
                             <button
                               type="button"
-                              onClick={() => handleDeleteUser(u)}
-                              className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                              onClick={() => openEditUser(u)}
+                              className="text-xs font-medium text-slate-600 hover:text-slate-900 underline"
                             >
-                              Supprimer
+                              Modifier
                             </button>
-                          ) : (
-                            <span className="text-[11px] text-slate-400">
-                              {u.role === "SUPERADMIN" ? "Superadmin" : "Admin"}
-                            </span>
-                          )}
+                            {deletable && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u)}
+                                className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                              >
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -299,5 +385,163 @@ export default function AdminUsersPage() {
         )}
       </div>
     </div>
+
+    {/* Modale création client */}
+    {showCreate && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl space-y-4">
+          <h2 className="text-lg font-semibold">Ajouter un client</h2>
+
+          {createError && (
+            <p className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+              {createError}
+            </p>
+          )}
+
+          <form onSubmit={handleCreateSave} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Prénom *</label>
+              <input
+                type="text"
+                value={createForm.firstName}
+                onChange={(e) => setCreateForm((f) => ({ ...f, firstName: e.target.value }))}
+                required
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Nom *</label>
+              <input
+                type="text"
+                value={createForm.lastName}
+                onChange={(e) => setCreateForm((f) => ({ ...f, lastName: e.target.value }))}
+                required
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Email *</label>
+              <input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                required
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Téléphone</label>
+              <input
+                type="tel"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="06 12 34 56 78"
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Mot de passe <span className="text-slate-400">(optionnel — généré auto si vide)</span>
+              </label>
+              <input
+                type="password"
+                value={createForm.password}
+                onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreate(false)}
+                disabled={createSaving}
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={createSaving}
+                className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {createSaving ? "Création…" : "Créer le client"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* Modale édition infos utilisateur */}
+
+    {editUser && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl space-y-4">
+          <h2 className="text-lg font-semibold">
+            Modifier {editUser.firstName} {editUser.lastName}
+          </h2>
+
+          {editError && (
+            <p className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+              {editError}
+            </p>
+          )}
+
+          <form onSubmit={handleEditSave} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Prénom</label>
+              <input
+                type="text"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))}
+                required
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Nom</label>
+              <input
+                type="text"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))}
+                required
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Téléphone</label>
+              <input
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="06 12 34 56 78"
+                className="w-full rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditUser(null)}
+                disabled={editSaving}
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={editSaving}
+                className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              >
+                {editSaving ? "Enregistrement…" : "Enregistrer"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

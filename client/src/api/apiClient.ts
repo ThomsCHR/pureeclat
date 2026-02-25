@@ -325,6 +325,14 @@ export function apiUpdateUserRole(id: number, role: UserRoleApi) {
   });
 }
 
+// Mettre à jour les infos d'un utilisateur (admin)
+export function apiUpdateUserInfo(id: number, body: { firstName?: string; lastName?: string; phone?: string | null }) {
+  return request<{ user: AdminUserApi }>(`/api/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
 // ---- Types Planning Staff ----
 export type StaffAppointmentApi = {
   id: number;
@@ -449,6 +457,20 @@ export function apiSearchClients(q: string) {
   return request<{ clients: ClientSearchResultApi[] }>(
     `/api/staff/clients/search?q=${encodeURIComponent(q)}`
   );
+}
+
+// Créer un client (admin)
+export function apiCreateUser(body: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  password?: string;
+}) {
+  return request<{ user: AdminUserApi }>("/api/users", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 // Supprimer un utilisateur (admin)
