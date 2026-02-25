@@ -1,23 +1,19 @@
 import { Router, Request, Response, NextFunction } from "express";
 import multer from "multer";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const router = Router();
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, path.join(__dirname, "../uploads"));
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  },
-});
-
+// Stockage en mémoire (pas de disque)
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 Mo max
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -29,21 +25,33 @@ const upload = multer({
   },
 });
 
-type RequestWithFile = Request & { file?: { filename: string; mimetype: string; size: number } };
+type RequestWithFile = Request & { file?: Express.Multer.File };
 
 router.post(
   "/image",
   authMiddleware,
   requireAdmin,
   upload.single("image"),
-  (req: RequestWithFile, res: Response, next: NextFunction) => {
+  async (req: RequestWithFile, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
         res.status(400).json({ message: "Aucun fichier reçu." });
         return;
       }
-      const url = `/uploads/${req.file.filename}`;
-      res.json({ url });
+
+      // Upload vers Cloudinary depuis le buffer mémoire
+      const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "pureeclat/services", resource_type: "image" },
+          (error, result) => {
+            if (error || !result) reject(error ?? new Error("Upload échoué."));
+            else resolve(result as { secure_url: string });
+          }
+        );
+        stream.end(req.file!.buffer);
+      });
+
+      res.json({ url: result.secure_url });
     } catch (err) {
       next(err);
     }
