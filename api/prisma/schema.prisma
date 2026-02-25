@@ -100,11 +100,16 @@ model Appointment {
   practitionerId Int
   practitioner   User @relation("PractitionerAppointments", fields: [practitionerId], references: [id], onDelete: Cascade)
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId Int?
+  service   Service? @relation(fields: [serviceId], references: [id])
 
   serviceOptionId Int?
   serviceOption   ServiceOption? @relation(fields: [serviceOptionId], references: [id])
+
+  // Soin personnalisé (planning uniquement, non rattaché au catalogue)
+  customServiceName     String?
+  customPriceCents      Int?
+  customDurationMinutes Int?
 
   status    AppointmentStatus @default(BOOKED)
   notes     String?

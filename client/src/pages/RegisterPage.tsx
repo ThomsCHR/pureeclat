@@ -278,11 +278,6 @@ export default function RegisterPage() {
               <span>
                 {loading ? "Création du compte..." : "Créer mon compte"}
               </span>
-              {!loading && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] text-black">
-                  →
-                </span>
-              )}
             </button>
           </form>
 

@@ -98,7 +98,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password) throw new AppError(400, "Email et mot de passe sont requis.");
 
@@ -108,8 +108,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     const isValid = await argon2.verify(user.passwordHash, password);
     if (!isValid) throw new AppError(401, "Identifiants incorrects.");
 
+    const cookieMaxAge = rememberMe ? 7 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
     const token = createToken({ userId: user.id, role: user.role, isAdmin: user.isAdmin });
-    setAuthCookie(res, token);
+    res.cookie("authToken", token, { ...COOKIE_OPTIONS, maxAge: cookieMaxAge });
 
     return res.json({
       user: {

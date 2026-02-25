@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +21,7 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      const data = await apiLogin(email, password);
+      const data = await apiLogin(email, password, rememberMe);
       login(data.user);
       navigate("/");
     } catch (err) {
@@ -150,6 +151,8 @@ export default function LoginPage() {
               <label className="inline-flex items-center gap-2">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-slate-300 text-black focus:ring-black"
                 />
                 <span>Se souvenir de moi</span>
@@ -163,11 +166,6 @@ export default function LoginPage() {
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span>{loading ? "Connexion..." : "Se connecter"}</span>
-              {!loading && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] text-black">
-                  →
-                </span>
-              )}
             </button>
           </form>
 

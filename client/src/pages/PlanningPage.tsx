@@ -7,10 +7,12 @@ import {
   apiUpdateStaffAppointment,
   apiDeleteStaffAppointment,
   apiGetStaffServices,
+  apiGetStaffStats,
   apiSearchClients,
   type StaffPractitionerApi,
   type StaffAppointmentApi,
   type StaffServiceApi,
+  type StaffStatsPeriod,
   type ClientSearchResultApi,
 } from "../api/apiClient";
 
@@ -32,6 +34,9 @@ function toLocalTime(iso: string) {
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
+function fmtPrice(cents: number) {
+  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0 }).format(cents / 100);
+}
 
 type NewRdvForm = {
   practitionerId: number;
@@ -39,6 +44,89 @@ type NewRdvForm = {
   startAt: string;
   slot: string;
 };
+
+/* ── Récapitulatif journée / semaine / mois ── */
+type Period = "day" | "week" | "month";
+type StatsShape = { week: StaffStatsPeriod; month: StaffStatsPeriod } | null;
+
+function PractitionerBreakdown({ rows }: { rows: { id: number; firstName: string; lastName: string; count: number; priceCents: number }[] }) {
+  if (rows.length === 0) return <p className="text-xs text-slate-400 py-2">Aucun rendez-vous sur cette période.</p>;
+  return (
+    <div className="space-y-2 mt-4">
+      {rows.map((p) => (
+        <div key={p.id} className="flex items-center gap-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-600 border border-slate-200">
+            {p.firstName[0]}{p.lastName[0]}
+          </span>
+          <span className="flex-1 text-sm text-slate-700 font-medium">{p.firstName} {p.lastName}</span>
+          <span className="text-xs text-slate-500 mr-2">{p.count} RDV</span>
+          <span className="min-w-[72px] text-right text-sm font-semibold text-slate-900">{fmtPrice(p.priceCents)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DaySummary({ practitioners, stats }: { practitioners: StaffPractitionerApi[]; stats: StatsShape }) {
+  const [activePeriod, setActivePeriod] = useState<Period>("day");
+
+  const dayRows = practitioners.map((p) => ({
+    id: p.id,
+    firstName: p.firstName,
+    lastName: p.lastName,
+    count: p.appointments.length,
+    priceCents: p.appointments.reduce((s, a) => s + (a.customPriceCents ?? a.service?.priceCents ?? 0), 0),
+  }));
+  const dayCount = dayRows.reduce((s, p) => s + p.count, 0);
+  const dayPrice = dayRows.reduce((s, p) => s + p.priceCents, 0);
+
+  const periods: { key: Period; label: string; count: number | null; priceCents: number | null; rows: StaffStatsPeriod["perPractitioner"] | null }[] = [
+    { key: "day",   label: "Aujourd'hui",   count: dayCount,               priceCents: dayPrice,                rows: dayRows },
+    { key: "week",  label: "Cette semaine", count: stats?.week.count ?? null,  priceCents: stats?.week.priceCents ?? null,  rows: stats?.week.perPractitioner ?? null },
+    { key: "month", label: "Ce mois",       count: stats?.month.count ?? null, priceCents: stats?.month.priceCents ?? null, rows: stats?.month.perPractitioner ?? null },
+  ];
+
+  const active = periods.find((p) => p.key === activePeriod)!;
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      {/* Tabs */}
+      <div className="grid grid-cols-3 border-b border-slate-100">
+        {periods.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setActivePeriod(p.key)}
+            className={`px-4 py-4 text-left transition-colors border-r last:border-r-0 border-slate-100 ${
+              activePeriod === p.key ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"
+            }`}
+          >
+            <p className={`text-[0.65rem] uppercase tracking-widest mb-1 ${activePeriod === p.key ? "text-slate-300" : "text-slate-400"}`}>
+              {p.label}
+            </p>
+            <p className={`text-lg font-bold leading-tight ${activePeriod === p.key ? "text-white" : "text-slate-900"}`}>
+              {p.priceCents !== null ? fmtPrice(p.priceCents) : "—"}
+            </p>
+            <p className={`text-xs mt-0.5 ${activePeriod === p.key ? "text-slate-300" : "text-slate-500"}`}>
+              {p.count !== null ? `${p.count} RDV` : "Chargement…"}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Détail par esthéticienne */}
+      <div className="px-5 py-4">
+        <p className="text-[0.65rem] uppercase tracking-widest text-slate-400">
+          Détail par esthéticienne — {active.label}
+        </p>
+        {active.rows ? (
+          <PractitionerBreakdown rows={active.rows} />
+        ) : (
+          <p className="text-xs text-slate-400 py-2 mt-4">Chargement…</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ── Modale responsive (bottom-sheet mobile / centré desktop) ── */
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
@@ -71,7 +159,7 @@ export default function PlanningPage() {
 
   // Modale création
   const [modal, setModal] = useState<NewRdvForm | null>(null);
-  const [form, setForm] = useState({ serviceId: "", clientFirstName: "", clientLastName: "", clientPhone: "", clientEmail: "", notes: "" });
+  const [form, setForm] = useState({ serviceId: "", isCustom: false, customName: "", customPrice: "", customDuration: "60", clientFirstName: "", clientLastName: "", clientPhone: "", clientEmail: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -82,9 +170,12 @@ export default function PlanningPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Stats semaine / mois
+  const [stats, setStats] = useState<{ week: { count: number; priceCents: number }; month: { count: number; priceCents: number } } | null>(null);
+
   // Modale édition
   const [editModal, setEditModal] = useState<StaffAppointmentApi | null>(null);
-  const [editForm, setEditForm] = useState({ serviceId: "", notes: "" });
+  const [editForm, setEditForm] = useState({ serviceId: "", isCustom: false, customName: "", customPrice: "", customDuration: "60", notes: "" });
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -114,6 +205,10 @@ export default function PlanningPage() {
   useEffect(() => {
     apiGetStaffServices().then((d) => setServices(d.services)).catch(() => {});
   }, []);
+  useEffect(() => {
+    setStats(null);
+    apiGetStaffStats(date, institute).then(setStats).catch(() => {});
+  }, [date, institute]);
 
   function getAppointmentAt(practitionerId: number, slot: string) {
     const p = practitioners.find((pr) => pr.id === practitionerId);
@@ -134,7 +229,7 @@ export default function PlanningPage() {
     const [h, m] = slot.split(":").map(Number);
     const d = new Date(`${date}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`);
     setModal({ practitionerId, practitionerName, startAt: d.toISOString(), slot });
-    setForm({ serviceId: "", clientFirstName: "", clientLastName: "", clientPhone: "", clientEmail: "", notes: "" });
+    setForm({ serviceId: "", isCustom: false, customName: "", customPrice: "", customDuration: "60", clientFirstName: "", clientLastName: "", clientPhone: "", clientEmail: "", notes: "" });
     setFormError(null);
     setClientSearch("");
     setClientSuggestions([]);
@@ -176,7 +271,15 @@ export default function PlanningPage() {
 
   function openEditModal(appt: StaffAppointmentApi) {
     setEditModal(appt);
-    setEditForm({ serviceId: String(appt.service.id), notes: appt.notes ?? "" });
+    const isCustom = appt.customServiceName !== null;
+    setEditForm({
+      serviceId: appt.service ? String(appt.service.id) : "",
+      isCustom,
+      customName: appt.customServiceName ?? "",
+      customPrice: appt.customPriceCents != null ? String(appt.customPriceCents / 100) : "",
+      customDuration: String(appt.customDurationMinutes ?? 60),
+      notes: appt.notes ?? "",
+    });
     setEditError(null);
     setConfirmDelete(false);
   }
@@ -187,7 +290,22 @@ export default function PlanningPage() {
     try {
       setEditSubmitting(true);
       setEditError(null);
-      await apiUpdateStaffAppointment(editModal.id, { serviceId: Number(editForm.serviceId), notes: editForm.notes || undefined });
+      await apiUpdateStaffAppointment(editModal.id, {
+        notes: editForm.notes || undefined,
+        ...(editForm.isCustom
+          ? {
+              serviceId: null,
+              customServiceName: editForm.customName.trim() || null,
+              customPriceCents: editForm.customPrice ? Math.round(parseFloat(editForm.customPrice) * 100) : null,
+              customDurationMinutes: editForm.customDuration ? Number(editForm.customDuration) : null,
+            }
+          : {
+              serviceId: editForm.serviceId ? Number(editForm.serviceId) : undefined,
+              customServiceName: null,
+              customPriceCents: null,
+              customDurationMinutes: null,
+            }),
+      });
       setEditModal(null);
       loadPlanning();
     } catch (err) {
@@ -210,21 +328,33 @@ export default function PlanningPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!modal) return;
-    if (!form.serviceId || !form.clientFirstName || !form.clientLastName || !form.clientPhone) {
+    if (!form.clientFirstName || !form.clientLastName || !form.clientPhone) {
       setFormError("Veuillez remplir tous les champs obligatoires."); return;
+    }
+    if (form.isCustom && !form.customName.trim()) {
+      setFormError("Veuillez saisir le nom du soin personnalisé."); return;
+    }
+    if (!form.isCustom && !form.serviceId) {
+      setFormError("Veuillez choisir un soin."); return;
     }
     try {
       setSubmitting(true);
       setFormError(null);
       await apiCreateStaffAppointment({
         practitionerId: modal.practitionerId,
-        serviceId: Number(form.serviceId),
         startAt: modal.startAt,
         clientFirstName: form.clientFirstName,
         clientLastName: form.clientLastName,
         clientPhone: form.clientPhone,
         clientEmail: form.clientEmail || undefined,
         notes: form.notes || undefined,
+        ...(form.isCustom
+          ? {
+              customServiceName: form.customName.trim(),
+              customPriceCents: form.customPrice ? Math.round(parseFloat(form.customPrice) * 100) : undefined,
+              customDurationMinutes: form.customDuration ? Number(form.customDuration) : undefined,
+            }
+          : { serviceId: Number(form.serviceId) }),
       });
       setModal(null);
       loadPlanning();
@@ -345,7 +475,10 @@ export default function PlanningPage() {
                               className="w-full text-left rounded-xl bg-amber-100 border border-amber-200 px-3 py-2.5 hover:bg-amber-200 transition-colors"
                             >
                               <p className="text-sm font-semibold text-amber-900">{appt.client.firstName} {appt.client.lastName}</p>
-                              <p className="text-xs text-amber-700 mt-0.5">{appt.service.name}</p>
+                              <p className="text-xs text-amber-700 mt-0.5">
+                                {appt.customServiceName ?? appt.service?.name}
+                                {appt.customPriceCents != null && <span className="ml-1 font-semibold">{fmtPrice(appt.customPriceCents)}</span>}
+                              </p>
                               <p className="text-[11px] text-amber-500 font-medium mt-0.5">
                                 {toLocalTime(appt.startAt)} – {toLocalTime(appt.endAt)}
                               </p>
@@ -416,7 +549,10 @@ export default function PlanningPage() {
                             <td key={p.id} className="py-1.5 px-2 border-l border-slate-100">
                               <button onClick={() => openEditModal(appt)} className="w-full text-left rounded-xl bg-amber-100 border border-amber-200 px-3 py-2.5 hover:bg-amber-200 transition-colors shadow-sm">
                                 <p className="text-sm font-semibold text-amber-900 leading-tight">{appt.client.firstName} {appt.client.lastName}</p>
-                                <p className="mt-0.5 text-xs text-amber-700">{appt.service.name}</p>
+                                <p className="mt-0.5 text-xs text-amber-700">
+                                  {appt.customServiceName ?? appt.service?.name}
+                                  {appt.customPriceCents != null && <span className="ml-1 font-semibold">{fmtPrice(appt.customPriceCents)}</span>}
+                                </p>
                                 <p className="mt-0.5 text-[11px] text-amber-500 font-medium">{toLocalTime(appt.startAt)} – {toLocalTime(appt.endAt)}</p>
                                 {appt.client.phone && <p className="mt-0.5 text-[11px] text-amber-500">{appt.client.phone}</p>}
                                 {appt.notes && <p className="mt-1 text-[11px] italic text-amber-600 truncate max-w-[160px] border-t border-amber-200 pt-1">{appt.notes}</p>}
@@ -443,6 +579,11 @@ export default function PlanningPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* ══════════════════════════════════════
+                RÉCAPITULATIF
+                ══════════════════════════════════════ */}
+            <DaySummary practitioners={practitioners} stats={stats} />
           </>
         )}
       </div>
@@ -463,10 +604,59 @@ export default function PlanningPage() {
 
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Soin</label>
-                <select value={editForm.serviceId} onChange={(e) => setEditForm({ ...editForm, serviceId: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name} {s.durationMinutes ? `(${s.durationMinutes} min)` : ""}</option>)}
-                </select>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-700">Soin</label>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, isCustom: !editForm.isCustom, serviceId: "", customName: "", customPrice: "", customDuration: "60" })}
+                    className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                      editForm.isCustom ? "bg-slate-900 text-white border-slate-900" : "border-slate-300 text-slate-500 hover:border-slate-500"
+                    }`}
+                  >
+                    {editForm.isCustom ? "← Catalogue" : "Soin personnalisé"}
+                  </button>
+                </div>
+                {!editForm.isCustom ? (
+                  <select value={editForm.serviceId} onChange={(e) => setEditForm({ ...editForm, serviceId: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
+                    <option value="">Choisir un soin…</option>
+                    {services.map((s) => <option key={s.id} value={s.id}>{s.name} {s.durationMinutes ? `(${s.durationMinutes} min)` : ""}</option>)}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      placeholder="Nom du soin *"
+                      value={editForm.customName}
+                      onChange={(e) => setEditForm({ ...editForm, customName: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Prix (€)"
+                          value={editForm.customPrice}
+                          onChange={(e) => setEditForm({ ...editForm, customPrice: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 pr-6"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">€</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="5"
+                          step="5"
+                          placeholder="Durée (min)"
+                          value={editForm.customDuration}
+                          onChange={(e) => setEditForm({ ...editForm, customDuration: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">min</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Notes internes</label>
@@ -506,11 +696,59 @@ export default function PlanningPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Soin */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Soin <span className="text-rose-500">*</span></label>
-                <select value={form.serviceId} onChange={(e) => setForm({ ...form, serviceId: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
-                  <option value="">Choisir un soin…</option>
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name} {s.durationMinutes ? `(${s.durationMinutes} min)` : ""}</option>)}
-                </select>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-700">Soin <span className="text-rose-500">*</span></label>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isCustom: !form.isCustom, serviceId: "", customName: "", customPrice: "", customDuration: "60" })}
+                    className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                      form.isCustom ? "bg-slate-900 text-white border-slate-900" : "border-slate-300 text-slate-500 hover:border-slate-500"
+                    }`}
+                  >
+                    {form.isCustom ? "← Catalogue" : "Soin personnalisé"}
+                  </button>
+                </div>
+                {!form.isCustom ? (
+                  <select value={form.serviceId} onChange={(e) => setForm({ ...form, serviceId: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
+                    <option value="">Choisir un soin…</option>
+                    {services.map((s) => <option key={s.id} value={s.id}>{s.name} {s.durationMinutes ? `(${s.durationMinutes} min)` : ""}</option>)}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      placeholder="Nom du soin *"
+                      value={form.customName}
+                      onChange={(e) => setForm({ ...form, customName: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Prix (€)"
+                          value={form.customPrice}
+                          onChange={(e) => setForm({ ...form, customPrice: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 pr-6"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">€</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="5"
+                          step="5"
+                          placeholder="Durée (min)"
+                          value={form.customDuration}
+                          onChange={(e) => setForm({ ...form, customDuration: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-slate-900 pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">min</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Client */}

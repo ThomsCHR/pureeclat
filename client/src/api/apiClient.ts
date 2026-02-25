@@ -141,10 +141,10 @@ export type LoginResponse = {
   user: AuthUser;
 };
 
-export function apiLogin(email: string, password: string) {
+export function apiLogin(email: string, password: string, rememberMe = false) {
   return request<LoginResponse>("/api/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, rememberMe }),
   });
 }
 
@@ -330,7 +330,10 @@ export type StaffAppointmentApi = {
   endAt: string;
   status: string;
   notes: string | null;
-  service: { id: number; name: string; durationMinutes: number | null };
+  service: { id: number; name: string; durationMinutes: number | null; priceCents: number | null } | null;
+  customServiceName: string | null;
+  customPriceCents: number | null;
+  customDurationMinutes: number | null;
   client: { id: number; firstName: string; lastName: string; phone: string; email: string };
 };
 
@@ -360,7 +363,10 @@ export function apiGetPlanning(date: string, institute?: string) {
 
 export function apiCreateStaffAppointment(body: {
   practitionerId: number;
-  serviceId: number;
+  serviceId?: number;
+  customServiceName?: string;
+  customPriceCents?: number;
+  customDurationMinutes?: number;
   startAt: string;
   clientFirstName: string;
   clientLastName: string;
@@ -374,7 +380,14 @@ export function apiCreateStaffAppointment(body: {
   });
 }
 
-export function apiUpdateStaffAppointment(id: number, body: { serviceId?: number; startAt?: string; notes?: string }) {
+export function apiUpdateStaffAppointment(id: number, body: {
+  serviceId?: number | null;
+  customServiceName?: string | null;
+  customPriceCents?: number | null;
+  customDurationMinutes?: number | null;
+  startAt?: string;
+  notes?: string;
+}) {
   return request<{ appointment: unknown }>(`/api/staff/appointments/${id}`, {
     method: "PUT",
     body: JSON.stringify(body),
@@ -389,6 +402,18 @@ export function apiDeleteStaffAppointment(id: number) {
 
 export function apiGetStaffServices() {
   return request<{ services: StaffServiceApi[] }>("/api/staff/services");
+}
+
+export type StaffStatsPeriod = {
+  count: number;
+  priceCents: number;
+  perPractitioner: { id: number; firstName: string; lastName: string; count: number; priceCents: number }[];
+};
+
+export function apiGetStaffStats(date: string, institute?: string) {
+  const params = new URLSearchParams({ date });
+  if (institute) params.set("institute", institute);
+  return request<{ week: StaffStatsPeriod; month: StaffStatsPeriod }>(`/api/staff/stats?${params}`);
 }
 
 export async function apiUploadImage(file: File): Promise<string> {
