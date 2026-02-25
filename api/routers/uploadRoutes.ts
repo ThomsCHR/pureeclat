@@ -25,7 +25,7 @@ const upload = multer({
   },
 });
 
-type RequestWithFile = Request & { file?: Express.Multer.File };
+type RequestWithFile = Request & { file?: { buffer: Buffer; mimetype: string; originalname: string; size: number } };
 
 router.post(
   "/image",
