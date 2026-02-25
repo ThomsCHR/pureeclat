@@ -112,10 +112,11 @@ model Appointment {
   customPriceCents      Int?
   customDurationMinutes Int?
 
-  status    AppointmentStatus @default(BOOKED)
-  notes     String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  status               AppointmentStatus @default(BOOKED)
+  notes                String?
+  stripePaymentIntentId String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 }
 
 model EmailVerificationToken {

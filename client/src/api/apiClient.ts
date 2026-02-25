@@ -127,6 +127,7 @@ export function apiCreateAppointment(body: {
   practitionerId: number;
   startAt: string;
   serviceOptionId?: number;
+  stripePaymentIntentId?: string;
 }) {
   return request<{ message: string; appointment: unknown }>(
     "/api/appointments",

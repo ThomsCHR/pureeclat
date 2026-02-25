@@ -8,8 +8,11 @@ import {
   type ServiceOption,
   type User,
 } from "@prisma/client";
+import Stripe from "stripe";
 import type { AuthRequest } from "../middleware/authMiddleware";
 import { AppError } from "../middleware/errorMiddleware";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const prisma = new PrismaClient();
 
@@ -96,6 +99,14 @@ export const cancelAppointment = async (req: AuthRequest, res: Response, next: N
       where: { id: appointmentId },
       data: { status: AppointmentStatus.CANCELLED },
     });
+
+    if (appointment.stripePaymentIntentId) {
+      try {
+        await stripe.refunds.create({ payment_intent: appointment.stripePaymentIntentId });
+      } catch (refundErr) {
+        console.error("Erreur remboursement Stripe:", refundErr);
+      }
+    }
 
     return res.json({
       message: isAdmin
@@ -198,7 +209,7 @@ export const createAppointment = async (req: AuthRequest, res: Response, next: N
   try {
     if (!req.user) throw new AppError(401, "Non authentifié.");
 
-    const { serviceId, practitionerId, startAt, serviceOptionId } = req.body;
+    const { serviceId, practitionerId, startAt, serviceOptionId, stripePaymentIntentId } = req.body;
 
     if (!serviceId || !practitionerId || !startAt) {
       throw new AppError(400, "serviceId, practitionerId et startAt sont requis pour créer un rendez-vous.");
@@ -253,6 +264,7 @@ export const createAppointment = async (req: AuthRequest, res: Response, next: N
         serviceId: service.id,
         serviceOptionId: option ? option.id : null,
         status: AppointmentStatus.BOOKED,
+        stripePaymentIntentId: stripePaymentIntentId ?? null,
       },
       include: {
         service: true,

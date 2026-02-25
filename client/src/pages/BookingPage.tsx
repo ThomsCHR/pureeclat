@@ -111,6 +111,7 @@ function PaymentForm({ service, pendingBooking, onSuccess, onCancel, formatTime 
           serviceId: service.id,
           practitionerId: pendingBooking.practitionerId,
           startAt: pendingBooking.slot.start,
+          stripePaymentIntentId: paymentIntent.id,
         });
         onSuccess();
       }
