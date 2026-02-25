@@ -44,8 +44,12 @@ router.post(
         const stream = cloudinary.uploader.upload_stream(
           { folder: "pureeclat/services", resource_type: "image" },
           (error, result) => {
-            if (error || !result) reject(error ?? new Error("Upload échoué."));
-            else resolve(result as { secure_url: string });
+            if (error || !result) {
+              console.error("[Cloudinary] Upload error:", error);
+              reject(error ?? new Error("Upload échoué."));
+            } else {
+              resolve(result as { secure_url: string });
+            }
           }
         );
         stream.end(req.file!.buffer);
