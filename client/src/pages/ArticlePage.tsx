@@ -1,4 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
+import SEO from "../components/SEO";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
 
 const articles: Record<
   string,
@@ -113,8 +116,32 @@ export default function ArticlePage() {
     );
   }
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.intro,
+    author: {
+      "@type": "Organization",
+      name: "Pure Éclat",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Pure Éclat",
+      url: SITE_URL,
+    },
+    url: `${SITE_URL}/articles/${slug}`,
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title={article.title}
+        description={article.intro.slice(0, 160)}
+        url={`${SITE_URL}/articles/${slug}`}
+        type="article"
+        jsonLd={articleJsonLd}
+      />
       {/* Header */}
       <div className="bg-amber-50 pb-12 pt-28">
         <div className="mx-auto max-w-2xl px-4">

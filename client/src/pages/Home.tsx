@@ -4,6 +4,40 @@ import HeroTitle from "../components/HeroTitle";
 import ButtonExplore from "../components/ButtonExplore";
 import AnimatedCard from "../components/AnimatedCard";
 import AnimatedHeroImage from "../components/AnimatedHeroImage";
+import SEO from "../components/SEO";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
+
+const LOCAL_BUSINESS_LD = {
+  "@context": "https://schema.org",
+  "@type": "BeautySalon",
+  name: "Pure Éclat",
+  description:
+    "Institut de beauté expert à Paris, Lyon et Marseille. Soins visage, corps et regard sur-mesure par des esthéticiennes expertes.",
+  url: SITE_URL,
+  logo: `${SITE_URL}/images/logo-pee.png`,
+  image: `${SITE_URL}/images/home.png`,
+  priceRange: "€€",
+  telephone: "",
+  address: [
+    {
+      "@type": "PostalAddress",
+      addressLocality: "Paris 16",
+      addressCountry: "FR",
+    },
+    {
+      "@type": "PostalAddress",
+      addressLocality: "Lyon",
+      addressCountry: "FR",
+    },
+    {
+      "@type": "PostalAddress",
+      addressLocality: "Marseille",
+      addressCountry: "FR",
+    },
+  ],
+  sameAs: [],
+};
 
 export default function Home() {
   const navigate = useNavigate();
@@ -27,6 +61,13 @@ export default function Home() {
 
   return (
     <div className="bg-white text-slate-900">
+      <SEO
+        title="Institut de beauté expert — Soins visage, corps & regard"
+        description="Pure Éclat : soins visage, corps et regard sur-mesure à Paris, Lyon et Marseille. Esthéticiennes expertes, technologies exclusives, résultats naturels."
+        url={SITE_URL}
+        jsonLd={LOCAL_BUSINESS_LD}
+      />
+
       {/* HERO */}
       <section id="hero" className="relative overflow-hidden min-h-screen">
         {/* Image plein écran desktop */}

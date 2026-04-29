@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import SEO from "../components/SEO";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
 import {
   apiGetPricingServices,
   apiDeleteService,
@@ -103,6 +106,11 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] px-4 py-24">
+      <SEO
+        title="Soins & Tarifs"
+        description="Carte complète des soins et tarifs Pure Éclat : rituels visage, soins corps, beauté du regard. Prix TTC transparents. Prenez rendez-vous en ligne."
+        url={`${SITE_URL}/tarifs`}
+      />
       <div className="mx-auto max-w-5xl">
         {/* En-tête */}
         <header className="mb-10">

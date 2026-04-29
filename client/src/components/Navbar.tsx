@@ -298,73 +298,145 @@ export default function Navbar() {
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
-            <div className="space-y-1">
-              <span className={`block h-0.5 w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "rotate-45 translate-y-1.5" : ""}`} />
-              <span className={`block h-0.5 w-5 bg-white transition-all duration-300 ${mobileOpen ? "opacity-0 scale-x-0" : ""}`} />
-              <span className={`block h-0.5 w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
+            <div className="space-y-1.5 flex flex-col items-center justify-center w-5">
+              <span className={`block h-px w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "rotate-45 translate-y-[3px]" : ""}`} />
+              <span className={`block h-px bg-white transition-all duration-300 ${mobileOpen ? "w-0 opacity-0" : "w-3.5"}`} />
+              <span className={`block h-px w-5 bg-white origin-center transition-all duration-300 ${mobileOpen ? "-rotate-45 -translate-y-[3px]" : ""}`} />
             </div>
           </button>
         </nav>
+      </header>
 
-        {/* Menu mobile déroulant */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-black/95 text-white border-t border-white/10 ${mobileOpen ? "max-h-[500px]" : "max-h-0"}`}>
-          <div className="mx-auto max-w-6xl px-4 py-4 space-y-3 text-sm">
-            {/* Rituels */}
-            <div>
+      {/* Overlay sombre */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setMobileOpen(false)}
+      />
+
+      {/* Panneau mobile plein écran (slide depuis la droite) */}
+      <div
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-[#0d0d0d] text-white transition-transform duration-300 ease-in-out md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* Header panneau */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+          <img
+            src="/images/logo-pee.png"
+            alt="Logo Pure Éclat"
+            className="h-12 w-auto"
+            onClick={() => { setMobileOpen(false); handleLogoClick(); }}
+          />
+          <button
+            onClick={() => setMobileOpen(false)}
+            aria-label="Fermer le menu"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Corps scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+
+          {/* Navigation principale */}
+          <nav className="space-y-1">
+            <button
+              onClick={() => { setMobileOpen(false); navigate("/soins"); }}
+              className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-base font-medium text-white hover:bg-white/8 transition"
+            >
+              Tous les soins
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            {sections.filter((s) => s.id !== "solutions").map((s) => (
               <button
-                onClick={() => { setMobileOpen(false); navigate("/soins"); }}
-                className="block w-full text-left text-sm text-white/90 hover:text-rose-300 transition"
+                key={s.id}
+                onClick={() => handleSectionClick(s.id)}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-base font-medium text-white hover:bg-white/8 transition"
               >
-                Rituels
+                {s.label}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
               </button>
-            </div>
-
-            {/* Autres liens */}
-            <div className="pt-2 border-t border-white/10 space-y-2">
-              {sections
-                .filter((s) => s.id !== "solutions")
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSectionClick(s.id)}
-                    className="block w-full text-left text-sm text-white/90 hover:text-rose-300 transition"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-            </div>
-
-            {/* Planning (staff uniquement) */}
+            ))}
             {isStaff && (
-              <div className="pt-2 border-t border-white/10">
-                <button
-                  onClick={() => { setMobileOpen(false); navigate("/planning"); }}
-                  className="block w-full text-left text-sm text-rose-300 hover:text-rose-200 font-medium transition"
-                >
-                  Planning
-                </button>
-              </div>
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/planning"); }}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-base font-medium text-rose-300 hover:bg-white/8 transition"
+              >
+                Planning
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             )}
+          </nav>
 
-            {/* CTA + compte */}
-            <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
-              <button
-                onClick={() => { setMobileOpen(false); navigate("/soins"); }}
-                className="w-full rounded-full border border-white/30 bg-white/10 backdrop-blur px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
-              >
-                Prendre RDV
-              </button>
-
-              <button
-                onClick={handleAuthClick}
-                className="w-full rounded-full bg-white text-xs font-semibold text-black py-2 flex items-center justify-center gap-2 transition hover:bg-white/90"
-              >
-                {isAuthenticated ? "Mon profil" : "Se connecter"}
-              </button>
-            </div>
+          {/* Catégories de soins */}
+          <div className="space-y-5">
+            {[
+              {
+                label: "RITUELS VISAGE",
+                items: [
+                  { name: "Rituel Éclat Signature", slug: "rituel-eclat-signature" },
+                  { name: "Hydra Glow", slug: "hydra-glow" },
+                  { name: "Peeling doux rénovateur", slug: "peeling-doux-renovateur" },
+                  { name: "Massage sculptant", slug: "massage-sculptant" },
+                ],
+              },
+              {
+                label: "SOINS CORPS",
+                items: [
+                  { name: "Modelage relaxant", slug: "modelage-relaxant" },
+                  { name: "Enveloppement raffermissant", slug: "enveloppement-raffermissant" },
+                  { name: "Drainage esthétique", slug: "drainage-esthetique" },
+                  { name: "Soin jambes légères", slug: "soin-jambes-legeres" },
+                ],
+              },
+              {
+                label: "BEAUTÉ DU REGARD",
+                items: [
+                  { name: "Brow Lift", slug: "brow-lift" },
+                  { name: "Rehaussement de cils", slug: "rehaussement-cils" },
+                  { name: "Teinture cils & sourcils", slug: "teinture-cils-sourcils" },
+                  { name: "Soin contour des yeux", slug: "soin-contour-yeux" },
+                ],
+              },
+            ].map((cat) => (
+              <div key={cat.label}>
+                <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.2em] text-rose-300">
+                  {cat.label}
+                </p>
+                <ul className="space-y-0.5">
+                  {cat.items.map((item) => (
+                    <li key={item.slug}>
+                      <button
+                        onClick={() => handleServiceClick(item.slug)}
+                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/80 hover:bg-white/8 hover:text-white transition"
+                      >
+                        {item.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
-      </header>
+
+        {/* Footer CTA */}
+        <div className="border-t border-white/10 px-6 py-5 space-y-3">
+          <button
+            onClick={() => { setMobileOpen(false); navigate("/soins"); }}
+            className="w-full rounded-full bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-95"
+          >
+            Prendre rendez-vous
+          </button>
+          <button
+            onClick={handleAuthClick}
+            className="w-full rounded-full border border-white/20 py-3 text-sm font-medium text-white transition hover:bg-white/10 active:scale-95"
+          >
+            {isAuthenticated ? "Mon profil" : "Se connecter"}
+          </button>
+        </div>
+      </div>
 
       {loading && <MiniLoader />}
     </>

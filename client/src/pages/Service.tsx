@@ -7,6 +7,9 @@ import {
   apiUploadImage,
   type ServiceApi,
 } from "../api/apiClient";
+import SEO from "../components/SEO";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
 
 type EditFormState = {
   name: string;
@@ -226,9 +229,40 @@ export default function ServicePage() {
 
   const mainPrice = formatPrice(service.priceCents);
 
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: service.name,
+    description: service.shortDescription || service.description || undefined,
+    provider: {
+      "@type": "BeautySalon",
+      name: "Pure Éclat",
+      url: SITE_URL,
+    },
+    ...(service.priceCents != null && {
+      offers: {
+        "@type": "Offer",
+        price: (service.priceCents / 100).toFixed(2),
+        priceCurrency: "EUR",
+      },
+    }),
+    ...(service.imageUrl && { image: service.imageUrl }),
+  };
+
   return (
     // 🧵 important : on coupe tout débordement horizontal
     <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900 overflow-x-hidden">
+      <SEO
+        title={service.name}
+        description={
+          service.shortDescription ||
+          service.description ||
+          `Découvrez le soin ${service.name} chez Pure Éclat. Réservez en ligne à Paris, Lyon ou Marseille.`
+        }
+        image={service.imageUrl || undefined}
+        url={`${SITE_URL}/soins/${service.slug}`}
+        jsonLd={serviceJsonLd}
+      />
       <section className="mx-auto max-w-6xl px-4 pb-16">
         {/* Breadcrumb */}
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">

@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Pages privées à ne pas indexer
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /profil
+Disallow: /reservation/
+Disallow: /planning
+Disallow: /admin/
+Disallow: /services
+Disallow: /mot-de-passe-oublie
+Disallow: /reinitialisation-mot-de-passe
+
+Sitemap: https://pure-éclat.fr/sitemap.xml

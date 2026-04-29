@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import SEO from "../components/SEO";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
 import {
   apiGetPricingServices,
   apiCreateService,
@@ -196,6 +199,11 @@ export default function ServicesListPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF5ED] pt-24 text-slate-900">
+      <SEO
+        title="Nos soins — Rituels visage, corps & regard"
+        description="Découvrez tous les soins Pure Éclat : rituels visage, soins corps, beauté du regard. Durées et tarifs. Réservez en ligne à Paris, Lyon ou Marseille."
+        url={`${SITE_URL}/soins`}
+      />
       <section className="mx-auto max-w-6xl px-4 pb-16">
         {/* Breadcrumb */}
         <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-500">
