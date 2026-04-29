@@ -369,56 +369,6 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* Catégories de soins */}
-          <div className="space-y-5">
-            {[
-              {
-                label: "RITUELS VISAGE",
-                items: [
-                  { name: "Rituel Éclat Signature", slug: "rituel-eclat-signature" },
-                  { name: "Hydra Glow", slug: "hydra-glow" },
-                  { name: "Peeling doux rénovateur", slug: "peeling-doux-renovateur" },
-                  { name: "Massage sculptant", slug: "massage-sculptant" },
-                ],
-              },
-              {
-                label: "SOINS CORPS",
-                items: [
-                  { name: "Modelage relaxant", slug: "modelage-relaxant" },
-                  { name: "Enveloppement raffermissant", slug: "enveloppement-raffermissant" },
-                  { name: "Drainage esthétique", slug: "drainage-esthetique" },
-                  { name: "Soin jambes légères", slug: "soin-jambes-legeres" },
-                ],
-              },
-              {
-                label: "BEAUTÉ DU REGARD",
-                items: [
-                  { name: "Brow Lift", slug: "brow-lift" },
-                  { name: "Rehaussement de cils", slug: "rehaussement-cils" },
-                  { name: "Teinture cils & sourcils", slug: "teinture-cils-sourcils" },
-                  { name: "Soin contour des yeux", slug: "soin-contour-yeux" },
-                ],
-              },
-            ].map((cat) => (
-              <div key={cat.label}>
-                <p className="mb-2 px-3 text-[10px] font-semibold tracking-[0.2em] text-rose-300">
-                  {cat.label}
-                </p>
-                <ul className="space-y-0.5">
-                  {cat.items.map((item) => (
-                    <li key={item.slug}>
-                      <button
-                        onClick={() => handleServiceClick(item.slug)}
-                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/80 hover:bg-white/8 hover:text-white transition"
-                      >
-                        {item.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Footer CTA */}
