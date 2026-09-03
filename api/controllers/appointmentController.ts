@@ -1,5 +1,6 @@
 import type { Response, NextFunction } from "express";
 import {
+  Prisma,
   PrismaClient,
   AppointmentStatus,
   UserRole,
@@ -256,22 +257,63 @@ export const createAppointment = async (req: AuthRequest, res: Response, next: N
       throw new AppError(400, "Ce créneau n'est plus disponible. Merci de choisir un autre horaire.");
     }
 
-    const appointment = await prisma.appointment.create({
-      data: {
-        startAt: startDate,
-        userId: req.user.id,
-        practitionerId: practitioner.id,
-        serviceId: service.id,
-        serviceOptionId: option ? option.id : null,
-        status: AppointmentStatus.BOOKED,
-        stripePaymentIntentId: stripePaymentIntentId ?? null,
-      },
-      include: {
-        service: true,
-        serviceOption: true,
-        practitioner: true,
-      },
-    });
+    // Un soin payant doit être adossé à un paiement Stripe réellement confirmé.
+    // On ne fait jamais confiance au statut renvoyé par le client : on revérifie
+    // le PaymentIntent auprès de Stripe (montant, devise, statut, propriétaire).
+    const expectedAmountCents = option ? option.priceCents : service.priceCents;
+
+    if (expectedAmountCents) {
+      if (!stripePaymentIntentId || typeof stripePaymentIntentId !== "string") {
+        throw new AppError(402, "Le paiement de ce soin est requis pour confirmer la réservation.");
+      }
+
+      let paymentIntent: Stripe.PaymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
+      } catch (stripeErr) {
+        console.error("Erreur vérification PaymentIntent Stripe:", stripeErr);
+        throw new AppError(402, "Paiement introuvable ou invalide.");
+      }
+
+      if (paymentIntent.status !== "succeeded") {
+        throw new AppError(402, "Le paiement n'a pas été confirmé.");
+      }
+
+      if (paymentIntent.amount !== expectedAmountCents || paymentIntent.currency !== "eur") {
+        throw new AppError(402, "Le montant payé ne correspond pas au prix du soin.");
+      }
+
+      if (paymentIntent.metadata?.userId !== String(req.user.id)) {
+        throw new AppError(402, "Ce paiement n'appartient pas à cet utilisateur.");
+      }
+    }
+
+    let appointment: AppointmentWithRelations;
+    try {
+      appointment = await prisma.appointment.create({
+        data: {
+          startAt: startDate,
+          userId: req.user.id,
+          practitionerId: practitioner.id,
+          serviceId: service.id,
+          serviceOptionId: option ? option.id : null,
+          status: AppointmentStatus.BOOKED,
+          stripePaymentIntentId: expectedAmountCents ? stripePaymentIntentId : null,
+        },
+        include: {
+          service: true,
+          serviceOption: true,
+          practitioner: true,
+        },
+      });
+    } catch (createErr) {
+      // Le PaymentIntent est déjà rattaché à un autre rendez-vous (contrainte @unique) :
+      // on refuse de réutiliser un même paiement pour réserver plusieurs créneaux.
+      if (createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === "P2002") {
+        throw new AppError(409, "Ce paiement a déjà été utilisé pour une autre réservation.");
+      }
+      throw createErr;
+    }
 
     return res.status(201).json({ message: "Rendez-vous créé avec succès.", appointment });
   } catch (error) {

@@ -1,10 +1,12 @@
 import type { Response, NextFunction } from "express";
 import { PrismaClient, UserRole, AppointmentStatus } from "@prisma/client";
+import Stripe from "stripe";
 import type { AuthRequest } from "../middleware/authMiddleware";
 import { AppError } from "../middleware/errorMiddleware";
 import argon2 from "argon2";
 
 const prisma = new PrismaClient();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const STAFF_ROLES: string[] = [
   UserRole.ESTHETICIENNE,
@@ -313,6 +315,16 @@ export const deleteStaffAppointment = async (
       data: { status: AppointmentStatus.CANCELLED },
     });
 
+    // Si le rendez-vous avait été payé en ligne, il faut rembourser le client
+    // (sinon il reste débité alors que son créneau disparaît du planning).
+    if (existing.stripePaymentIntentId) {
+      try {
+        await stripe.refunds.create({ payment_intent: existing.stripePaymentIntentId });
+      } catch (refundErr) {
+        console.error("Erreur remboursement Stripe:", refundErr);
+      }
+    }
+
     res.json({ message: "Rendez-vous annulé." });
   } catch (err) {
     next(err);
@@ -416,8 +428,13 @@ export const getStats = async (
 
     const apptSelect = {
       practitionerId: true,
+      customPriceCents: true,
       service: { select: { priceCents: true } },
     } as const;
+
+    function priceOf(a: { customPriceCents: number | null; service: { priceCents: number | null } | null }) {
+      return a.customPriceCents ?? a.service?.priceCents ?? 0;
+    }
 
     const [weekAppts, monthAppts] = await Promise.all([
       prisma.appointment.findMany({
@@ -438,12 +455,12 @@ export const getStats = async (
       }),
     ]);
 
-    function groupByPract(appts: { practitionerId: number; service: { priceCents: number | null } }[]) {
+    function groupByPract(appts: { practitionerId: number; customPriceCents: number | null; service: { priceCents: number | null } | null }[]) {
       const map = new Map<number, { count: number; priceCents: number }>();
       for (const a of appts) {
         const cur = map.get(a.practitionerId) ?? { count: 0, priceCents: 0 };
         cur.count++;
-        cur.priceCents += a.service.priceCents ?? 0;
+        cur.priceCents += priceOf(a);
         map.set(a.practitionerId, cur);
       }
       return practitioners.map((p) => ({
@@ -457,12 +474,12 @@ export const getStats = async (
     res.json({
       week: {
         count: weekAppts.length,
-        priceCents: weekAppts.reduce((sum, a) => sum + (a.service.priceCents ?? 0), 0),
+        priceCents: weekAppts.reduce((sum, a) => sum + priceOf(a), 0),
         perPractitioner: groupByPract(weekAppts),
       },
       month: {
         count: monthAppts.length,
-        priceCents: monthAppts.reduce((sum, a) => sum + (a.service.priceCents ?? 0), 0),
+        priceCents: monthAppts.reduce((sum, a) => sum + priceOf(a), 0),
         perPractitioner: groupByPract(monthAppts),
       },
     });
