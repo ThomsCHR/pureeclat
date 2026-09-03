@@ -42,3 +42,6 @@ client/.vite/
 # API build
 api/node_modules/
 api/dist/
+
+# Claude Code local settings
+.claude/
