@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import SEO from "../components/SEO";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://pure-éclat.fr";
 import {
   apiGetPricingServices,
   apiDeleteService,

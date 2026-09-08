@@ -6,7 +6,7 @@ import AnimatedCard from "../components/AnimatedCard";
 import AnimatedHeroImage from "../components/AnimatedHeroImage";
 import SEO from "../components/SEO";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://pure-éclat.fr";
 
 const LOCAL_BUSINESS_LD = {
   "@context": "https://schema.org",
