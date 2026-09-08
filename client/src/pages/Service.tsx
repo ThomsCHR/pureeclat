@@ -9,7 +9,7 @@ import {
 } from "../api/apiClient";
 import SEO from "../components/SEO";
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://pure-éclat.fr";
 
 type EditFormState = {
   name: string;

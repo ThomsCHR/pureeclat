@@ -11,7 +11,7 @@ interface SEOProps {
 }
 
 const SITE_NAME = "Pure Éclat";
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.pureeclat.fr";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://pure-éclat.fr";
 const DEFAULT_DESCRIPTION =
   "Pure Éclat, institut de beauté expert à Paris, Lyon et Marseille. Soins visage, corps et regard sur-mesure par des esthéticiennes expertes.";
 const DEFAULT_IMAGE = `${SITE_URL}/images/home.png`;
